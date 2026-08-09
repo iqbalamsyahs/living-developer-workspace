@@ -17,7 +17,7 @@ const DEBUG = process.env.NEXT_PUBLIC_DEBUG_SCENE === "true";
 //   recentered via position offset and scaled to ~0.36 wide; rotated Y 180deg so the
 //   spine sits at the back, placed at the desk's left-front
 // - whiteboard: face lies in the Y-Z plane, rotated Y 180deg per user request
-const MODEL_LAYOUT: (SceneModelLayout & { key: string })[] = [
+const MODEL_LAYOUT: SceneModelLayout[] = [
   {
     key: "desk",
     url: "/glb/desk.glb",
@@ -39,7 +39,7 @@ const MODEL_LAYOUT: (SceneModelLayout & { key: string })[] = [
   {
     key: "pc",
     url: "/glb/pc.glb",
-    id: "cs-pensioner-admin",
+    id: "showcase",
     position: [-0.0200, 0.9439, -0.0074],
     rotation: [0, Math.PI / 2, 0],
     scale: [0.0016, 0.0016, 0.0016],
@@ -47,7 +47,7 @@ const MODEL_LAYOUT: (SceneModelLayout & { key: string })[] = [
   {
     key: "notebook",
     url: "/glb/notebook.glb",
-    id: "jrn-japanese",
+    id: "about",
     position: [0.2034, 0.9366, 0.1812],
     // Rotate π so the spine rings sit at the back; the top cover faces the camera.
     rotation: [0, Math.PI / 9, 0],
@@ -56,9 +56,18 @@ const MODEL_LAYOUT: (SceneModelLayout & { key: string })[] = [
   {
     key: "whiteboard",
     url: "/glb/whiteboard.glb",
-    position: [0.242, 0.84, -1.7],
-    rotation: [0, -Math.PI / 2, 0],
+    id: "stack",
+    position: [0.242, 0.84, 1.5],
+    rotation: [0, Math.PI / 2, 0],
     scale: [1, 1, 1],
+  },
+  {
+    key: "phone",
+    url: "/glb/phone.glb",
+    id: "contact",
+    position: [0.65, 0.943, -0.7],
+    rotation: [Math.PI / 2, 0, Math.PI / 2],
+    scale: [0.15, 0.15, 0.15],
   },
 ];
 
@@ -73,23 +82,35 @@ interface DesktopSceneProps {
 export function DesktopScene({ onOpenModal }: DesktopSceneProps) {
   return (
     <div aria-hidden className="fixed inset-0 z-[-1]">
-      <Canvas dpr={[1, 2]} camera={{ position: [0.5, 1.7, 3.4], fov: 45 }}>
-        {/* Dim cool base light (slate) */}
-        <ambientLight intensity={0.35} color="#5c6f92" />
-        {/* Sky/ground gradient for soft depth — no flat mud */}
-        <hemisphereLight intensity={0.45} color="#8fa3c4" groundColor="#1e293b" />
-        {/* Emerald key light pooling onto the desk */}
+      <Canvas dpr={[1, 2]} camera={{ position: [15, 14, 0], fov: 30 }}>
+        {/* ── Ambient: neutral base so every material reads true ── */}
+        <ambientLight intensity={0.22} color="#e6ecf4" />
+        {/* ── Hemisphere: cool sky above + warm bounce below — lifts the tops of
+             the notebook, phone, and whiteboard; keeps the desk from going flat ── */}
+        <hemisphereLight intensity={0.45} color="#dce5f2" groundColor="#3a2e20" />
+
+        {/* ── Key (desk lamp): warm pool from the camera-side upper right —
+             lights the desk top, the notebook cover, and the phone's screen ── */}
         <spotLight
-          position={[1.8, 4, 2.2]}
+          position={[2.6, 3.4, 1.4]}
           angle={0.55}
-          penumbra={0.8}
-          intensity={90}
-          color="#10b981"
+          penumbra={0.9}
+          intensity={28}
+          distance={8}
+          color="#ffdcae"
         />
-        {/* Cool fill from the front-left so PC + notebook read clearly */}
-        <directionalLight position={[-2.5, 2, 3]} intensity={1.4} color="#b6c3d6" />
-        {/* Violet glow in front of the screen — tints, doesn't blow out */}
-        <pointLight position={[-0.02, 1.25, 0.9]} intensity={5} distance={3} color="#8b5cf6" />
+
+        {/* ── Fill (moonlight): cool from the camera side (+x/+z) — lifts the
+             PC's right face, the notebook, and the whiteboard's visible face ── */}
+        <directionalLight position={[3, 1.6, 1.8]} intensity={0.6} color="#b6c6de" />
+
+        {/* ── Rim: subtle cool from behind-left — separates the PC and
+             whiteboard silhouettes from the night background ── */}
+        <directionalLight position={[-2.5, 1.4, -2]} intensity={0.3} color="#8090ac" />
+
+        {/* ── Monitor glow (brand accent): tight emerald pool at the screen so
+             it reads as atmosphere, not a flood on the desk or whiteboard ── */}
+        <pointLight position={[-0.02, 1.25, 0.4]} intensity={3.5} distance={1.5} color="#10b981" />
 
         <Suspense fallback={null}>
           {MODEL_LAYOUT.map((model) => (
@@ -131,7 +152,7 @@ export function DesktopScene({ onOpenModal }: DesktopSceneProps) {
           maxDistance={6}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0.5, 0]}
+          target={[0.25, 0.5, 0]}
         />
       </Canvas>
     </div>

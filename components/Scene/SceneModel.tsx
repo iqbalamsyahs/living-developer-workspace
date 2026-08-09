@@ -11,6 +11,7 @@ import { useGLTF } from "@react-three/drei";
 let interactiveHovered = false;
 
 export type SceneModelLayout = {
+  key: string;
   url: string;
   /** Present => model is clickable and shows the pointer cursor. */
   id?: string;

@@ -3,7 +3,12 @@
 import { ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
-import { contentItems } from "@/lib/content";
+import { ExperienceTimeline } from "@/components/ExperienceTimeline";
+import {
+  contentItems,
+  getContent,
+  type StackCategory,
+} from "@/lib/content";
 
 interface StandardViewProps {
   /** Present on desktop when the 3D HUD is the alternative view. */
@@ -13,8 +18,27 @@ interface StandardViewProps {
 
 const caseStudies = contentItems.filter((item) => item.kind === "caseStudy");
 const journalEntries = contentItems.filter((item) => item.kind === "journal");
+const about = getContent("about");
+const stackContent = getContent("stack");
+const contact = getContent("contact");
 
 const JP_CHARS = /[぀-ヿ㐀-䶿一-鿿]/;
+
+// DESIGN.md: solid green for core stack, solid violet for languages and
+// design tools, outline for everything else.
+const CATEGORY_VARIANT: Record<StackCategory, "default" | "language" | "tool"> = {
+  framework: "default",
+  language: "language",
+  tool: "tool",
+  cloud: "default",
+};
+
+const CATEGORY_LABEL: Record<StackCategory, string> = {
+  framework: "Frameworks",
+  language: "Languages",
+  tool: "Tools",
+  cloud: "Cloud & Infra",
+};
 
 /**
  * Mobile-first 2D layout: the default view on small screens and the opt-in
@@ -59,6 +83,92 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
           </Button>
         </div>
       </header>
+
+      {/* About & Experience */}
+      {about && (
+        <section aria-labelledby="about-heading" className="py-16">
+          <h2
+            id="about-heading"
+            className="font-display text-2xl text-text-primary"
+          >
+            About & Experience
+          </h2>
+          <div className="mt-8 flex flex-col gap-4">
+            {about.body.map((paragraph, index) => (
+              <p
+                key={index}
+                className="max-w-[60ch] text-sm leading-relaxed text-text-primary/90"
+              >
+                {paragraph}
+              </p>
+            ))}
+            {about.philosophy && (
+              <blockquote className="mt-2 max-w-[60ch] border-l-2 border-primary/40 pl-4 text-text-secondary">
+                {about.philosophy}
+              </blockquote>
+            )}
+          </div>
+          {about.experiences && about.experiences.length > 0 && (
+            <div className="mt-10 rounded-md border border-primary/10 bg-surface p-8">
+              <h3 className="mb-8 font-display text-lg text-text-primary">
+                Experience
+              </h3>
+              <ExperienceTimeline experiences={about.experiences} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Stack & Services */}
+      {stackContent && stackContent.stack && (
+        <section aria-labelledby="stack-heading" className="py-16">
+          <h2
+            id="stack-heading"
+            className="font-display text-2xl text-text-primary"
+          >
+            My Stack & My Services
+          </h2>
+          <div className="mt-8 flex flex-col gap-8">
+            {[...new Set(stackContent.stack.map((item) => item.category))].map(
+              (category) => (
+                <div key={category}>
+                  <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-text-secondary">
+                    {CATEGORY_LABEL[category]}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {stackContent
+                      .stack!.filter((item) => item.category === category)
+                      .map((item) => (
+                        <TechPill
+                          key={item.name}
+                          label={item.name}
+                          variant={CATEGORY_VARIANT[category]}
+                        />
+                      ))}
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+          {stackContent.services && stackContent.services.length > 0 && (
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              {stackContent.services.map((service) => (
+                <article
+                  key={service.name}
+                  className="rounded-md border border-primary/10 bg-surface p-6"
+                >
+                  <h3 className="font-display text-sm text-text-primary">
+                    {service.name}
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+                    {service.description}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Projects */}
       <section aria-labelledby="projects-heading" className="py-16">
@@ -143,23 +253,35 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
             Contact
           </h2>
           <p className="mt-3 max-w-[55ch] text-sm leading-relaxed text-text-secondary">
-            Open to frontend roles and interesting projects. Email works best.
+            {contact?.body[0] ?? "Open to frontend roles and interesting projects. Email works best."}
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <a
-              href="mailto:hello@ibang.dev"
+              href={`mailto:${contact?.contact?.email ?? "hello@ibang.dev"}`}
               className="rounded-sm border border-primary/60 px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-ink"
             >
               Email me
             </a>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-sm px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
-            >
-              GitHub
-            </a>
+            {contact?.contact?.github && (
+              <a
+                href={contact.contact.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-sm px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+              >
+                GitHub
+              </a>
+            )}
+            {contact?.contact?.linkedin && (
+              <a
+                href={contact.contact.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-sm px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+              >
+                LinkedIn
+              </a>
+            )}
           </div>
         </div>
       </section>

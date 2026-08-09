@@ -1,6 +1,13 @@
 "use client";
 
-import { Books, Monitor, TerminalWindow } from "@phosphor-icons/react";
+import {
+  Books,
+  Monitor,
+  Phone,
+  Stack,
+  TerminalWindow,
+  User,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 
 interface HUDProps {
@@ -9,7 +16,10 @@ interface HUDProps {
 }
 
 const FABs: { id: string; label: string; icon: typeof Monitor }[] = [
-  { id: "cs-pensioner-admin", label: "Case studies", icon: Monitor },
+  { id: "showcase", label: "Showcase", icon: Monitor },
+  { id: "about", label: "About", icon: User },
+  { id: "stack", label: "Stack", icon: Stack },
+  { id: "contact", label: "Contact", icon: Phone },
   { id: "jrn-japanese", label: "Learning journal", icon: Books },
   { id: "resume", label: "Resume", icon: TerminalWindow },
 ];
