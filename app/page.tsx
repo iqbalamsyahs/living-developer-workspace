@@ -5,12 +5,11 @@ import { HUD } from "@/components/HUD";
 import { StandardView } from "@/components/StandardView";
 import { Modal } from "@/components/Modal";
 import { ModalContent } from "@/components/ModalContent";
+import { DesktopScene } from "@/components/Scene/DesktopScene";
 import { getContent } from "@/lib/content";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // z-scale: 3D canvas -1 | HUD overlay 10 | modal dialog top-layer.
-// The 3D canvas is out of scope for now; the HUD placeholder sits above
-// where it will render.
 
 export default function Home() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -28,7 +27,10 @@ export default function Home() {
   return (
     <>
       {showHUD ? (
-        <HUD onToggleStandard={toggleView} onOpen={setActiveModal} />
+        <>
+          <DesktopScene onOpenModal={setActiveModal} />
+          <HUD onToggleStandard={toggleView} onOpen={setActiveModal} />
+        </>
       ) : (
         <StandardView
           onToggleHUD={isDesktop ? toggleView : undefined}
