@@ -31,6 +31,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // suppressHydrationWarning: a browser extension (QB, data-qb-installed)
+      // injects attributes onto <html> after SSR; React otherwise warns on the
+      // attribute mismatch. Text/content under <html> is still checked.
+      suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable} ${notoSansJp.variable} antialiased`}
     >
       <body>{children}</body>
