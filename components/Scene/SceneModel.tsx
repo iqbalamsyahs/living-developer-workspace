@@ -40,9 +40,6 @@ export function SceneModel({ layout, onOpenModal }: SceneModelProps) {
     ? {
         onClick: (e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
-          // Ignore clicks that followed an orbit drag (OrbitControls listens on
-          // the DOM canvas, so stopPropagation can't suppress the double-fire).
-          if (e.delta > 4) return;
           if (layout.id) onOpenModal(layout.id);
         },
         onPointerOver: (e: ThreeEvent<PointerEvent>) => {
