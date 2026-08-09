@@ -1,7 +1,42 @@
 // MOCK DATA - swap for Sanity GROQ queries later (see PRD.md section 7 data model).
-// Shapes mirror the Sanity schemas: projectCaseStudy / journalEntry / resume.
+// Shapes mirror the Sanity schemas: profile / experience / projectCaseStudy /
+// journalEntry / resume.
 
-export type ContentKind = "caseStudy" | "journal" | "resume";
+export type ContentKind =
+  | "caseStudy"
+  | "journal"
+  | "resume"
+  | "about"
+  | "stack"
+  | "showcase"
+  | "contact";
+
+export type StackCategory = "framework" | "language" | "tool" | "cloud";
+
+export interface Experience {
+  position: string;
+  company: string;
+  startDate: string;
+  /** Present when the role is finished. */
+  endDate?: string;
+  description: string;
+}
+
+export interface StackItem {
+  name: string;
+  category: StackCategory;
+}
+
+export interface Service {
+  name: string;
+  description: string;
+}
+
+export interface Contact {
+  email: string;
+  linkedin?: string;
+  github?: string;
+}
 
 export interface ContentItem {
   id: string;
@@ -13,6 +48,16 @@ export interface ContentItem {
   /** Paragraphs of body text. Journal entries may contain Japanese. */
   body: string[];
   links?: { label: string; href: string }[];
+  /** about only: one-line working philosophy. */
+  philosophy?: string;
+  /** about only: career history. */
+  experiences?: Experience[];
+  /** stack only: tech stack items. */
+  stack?: StackItem[];
+  /** stack only: professional services. */
+  services?: Service[];
+  /** contact only: contact details. */
+  contact?: Contact;
 }
 
 export const contentItems: ContentItem[] = [
@@ -88,6 +133,95 @@ export const contentItems: ContentItem[] = [
       { label: "Email", href: "mailto:hello@ibang.dev" },
       { label: "GitHub", href: "https://github.com" },
     ],
+  },
+  {
+    id: "about",
+    kind: "about",
+    title: "About & Experience",
+    body: [
+      "Frontend developer who cares about the long tail: the first render, the edge case, the user who holds the phone upside down. I have spent the last few years turning slow, tangled interfaces into fast, typed, server-rendered ones.",
+      "I work best at the boundary between design and engineering — reading a Figma file for the intent behind a layout, then arguing for the implementation that keeps it fast. Accessibility is not a checklist pass; it is the same craft as performance.",
+      "The tools I reach for change, but the discipline does not: small composable modules, explicit data flow, and code that reads like the problem it solves.",
+    ],
+    philosophy:
+      "Clean code is code nobody has to explain — the reader's first guess should be the right one.",
+    experiences: [
+      {
+        position: "Frontend Developer",
+        company: "Freelance",
+        startDate: "2024",
+        description:
+          "Building dashboards and offline-first web apps for small teams. Own discovery through delivery, from Next.js architecture to Lighthouse budgets.",
+      },
+      {
+        position: "Software Engineer",
+        company: "Acme Co",
+        startDate: "2022",
+        endDate: "2024",
+        description:
+          "Led the rewrite of a legacy jQuery admin dashboard into typed, server-rendered React. Cut time-to-interactive 4x and made complex filter state shareable via the URL.",
+      },
+      {
+        position: "Junior Developer",
+        company: "Startup X",
+        startDate: "2020",
+        endDate: "2022",
+        description:
+          "Shipped a cooperative bookkeeping app with offline-first sync. Learned what idempotent write paths actually cost and why they are worth it.",
+      },
+    ],
+  },
+  {
+    id: "stack",
+    kind: "stack",
+    title: "My Stack & My Services",
+    body: [],
+    stack: [
+      { name: "Next.js", category: "framework" },
+      { name: "React", category: "framework" },
+      { name: "Tailwind CSS", category: "framework" },
+      { name: "Flutter", category: "framework" },
+      { name: "TypeScript", category: "language" },
+      { name: "SQL", category: "language" },
+      { name: "Figma", category: "tool" },
+      { name: "Git", category: "tool" },
+      { name: "Vercel", category: "cloud" },
+    ],
+    services: [
+      {
+        name: "Frontend Development",
+        description: "Typed, server-rendered React apps built on Next.js with accessibility and performance baked in.",
+      },
+      {
+        name: "Mobile App Development",
+        description: "Cross-platform mobile experiences with Flutter that share the same design language as the web.",
+      },
+      {
+        name: "Performance Audits",
+        description: "Profile, budget, and cut time-to-interactive without redesigning the product.",
+      },
+      {
+        name: "Offline-first Architecture",
+        description: "Sync strategies and local-first data flows that survive flaky connections.",
+      },
+    ],
+  },
+  {
+    id: "showcase",
+    kind: "showcase",
+    title: "Showcase Projects",
+    body: [],
+  },
+  {
+    id: "contact",
+    kind: "contact",
+    title: "Contact",
+    body: ["Open to frontend roles and interesting projects. Email works best."],
+    contact: {
+      email: "hello@ibang.dev",
+      github: "https://github.com",
+      linkedin: "https://www.linkedin.com",
+    },
   },
 ];
 
