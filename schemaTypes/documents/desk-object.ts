@@ -18,13 +18,15 @@ export const deskObject = defineType({
       name: 'modelType',
       title: 'Model Type',
       description:
-        'Must map exactly to a frontend component name (monitor, whiteboard, notebook).',
+        'Must map exactly to a frontend component name (monitor, whiteboard, notebook, pc, phone).',
       type: 'string',
       options: {
         list: [
           {title: 'Monitor', value: 'monitor'},
           {title: 'Whiteboard', value: 'whiteboard'},
           {title: 'Notebook', value: 'notebook'},
+          {title: 'PC', value: 'pc'},
+          {title: 'Phone', value: 'phone'},
         ],
         layout: 'radio',
       },
@@ -33,9 +35,9 @@ export const deskObject = defineType({
     defineField({
       name: 'contentReference',
       title: 'Content Reference',
-      description: 'The case study or journal entry opened when this object is clicked.',
+      description: 'The profile, case study, or journal entry opened when this object is clicked.',
       type: 'reference',
-      to: [{type: 'projectCaseStudy'}, {type: 'journalEntry'}],
+      to: [{type: 'projectCaseStudy'}, {type: 'journalEntry'}, {type: 'profile'}],
     }),
   ],
   preview: {
