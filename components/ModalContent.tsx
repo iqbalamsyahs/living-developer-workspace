@@ -1,9 +1,8 @@
 "use client";
 
-import { X } from "@phosphor-icons/react";
 import type { ContentItem } from "@/lib/content";
-import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
+import { ModalHeader } from "@/components/ModalHeader";
 
 interface ModalContentProps {
   content: ContentItem;
@@ -28,30 +27,11 @@ function pillVariant(label: string): "default" | "language" | "tool" {
  * close), tech metadata bar, scrollable body, footer links.
  */
 export function ModalContent({ content, onClose }: ModalContentProps) {
-  const titleId = `${content.id}-title`;
   const hasJapanese = content.body.some((p) => JP_CHARS.test(p));
 
   return (
     <>
-      <header className="flex items-start justify-between gap-4 border-b border-primary/10 p-8 pb-6">
-        <div className="min-w-0">
-          <h2 id={titleId} className="font-display text-2xl leading-none">
-            {content.title}
-          </h2>
-          {content.date && (
-            <p className="mt-2 text-xs text-text-secondary">{content.date}</p>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={`Close ${content.title}`}
-          onClick={onClose}
-          className="shrink-0 p-1.5"
-        >
-          <X size={16} aria-hidden="true" />
-        </Button>
-      </header>
+      <ModalHeader id={content.id} title={content.title} subtitle={content.date} onClose={onClose} />
 
       {content.tech && content.tech.length > 0 && (
         <div
