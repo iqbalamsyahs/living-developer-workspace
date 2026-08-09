@@ -5,9 +5,9 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, ContactShadows, Grid } from "@react-three/drei";
 import { SceneModel, type SceneModelLayout } from "./SceneModel";
 
-// TEMP calibration: true shows the drei Grid + axes helper while tuning
-// MODEL_LAYOUT below. Flip to false once the scene is positioned.
-const DEBUG = true;
+// Calibration flag from .env.local (NEXT_PUBLIC_ is inlined into the client
+// bundle). True shows the drei Grid + axes helper while tuning MODEL_LAYOUT.
+const DEBUG = process.env.NEXT_PUBLIC_DEBUG_SCENE === "true";
 
 // Positions calibrated against each GLB's world bounds (see plan notes):
 // - desk: origin sits on the floor, top surface at y=0.942, center x=0.242
@@ -48,9 +48,9 @@ const MODEL_LAYOUT: (SceneModelLayout & { key: string })[] = [
     key: "notebook",
     url: "/glb/notebook.glb",
     id: "jrn-japanese",
-    position: [-0.6416, 0.9366, 1.1812],
+    position: [0.2034, 0.9366, 0.1812],
     // Rotate π so the spine rings sit at the back; the top cover faces the camera.
-    rotation: [0, Math.PI, 0],
+    rotation: [0, Math.PI / 9, 0],
     scale: [3.2145e-7, 3.2145e-7, 3.2145e-7],
   },
   {
