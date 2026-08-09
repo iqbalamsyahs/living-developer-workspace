@@ -51,7 +51,11 @@ export function Modal({
       dialog.close();
     }
     return () => {
-      if (dialog.open) dialog.close();
+      // Only close on real unmount (open -> false), never on a redundant
+      // effect re-run mid-mount: R3F-initiated state updates can interleave
+      // with React's concurrent scheduling, firing the cleanup after
+      // showModal() and instantly closing a freshly opened dialog.
+      if (!open && dialog.open) dialog.close();
     };
   }, [open]);
 
