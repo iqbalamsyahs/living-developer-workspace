@@ -85,15 +85,16 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
 
 // Where the camera lands to inspect the PC monitor, and where the HTML
 // showcase panel is anchored. screenOffset = world offset from the pc group
-// origin to the monitor screen center (calibrate with the DEBUG grid);
-// camDist = distance the camera parks in front of the screen. The pc group is
-// rotated Y 90° so its screen faces +X, hence the camera sits on +X of the
-// screen center.
+// origin to the monitor screen center. Measured from monitor.glb: the
+// screen-glass mesh (identity node transforms) centers at local
+// (0.026, 0.186, 0.007) and spans 0.730 (z) x 0.440 (y). camDist = distance
+// the camera parks in front of the screen. The screen faces +X, hence the
+// camera sits on +X of the screen center.
 const ZOOM_VIEWS: Record<
   string,
   { screenOffset: [number, number, number]; camDist: number }
 > = {
-  pc: { screenOffset: [0.28, 0.22, 0], camDist: 0.9 },
+  pc: { screenOffset: [0.026, 0.186, 0.007], camDist: 1.3 },
 };
 
 const DEFAULT_TARGET: [number, number, number] = [0.25, 0.5, 0];
@@ -102,6 +103,13 @@ const DEFAULT_TARGET: [number, number, number] = [0.25, 0.5, 0];
 // there is no one-frame snap while React catches up with the `zoomed` state.
 const DEFAULT_CLAMPS = { minDistance: 1.5, maxDistance: 6, maxPolarAngle: Math.PI / 2.1 };
 const ZOOMED_CLAMPS = { minDistance: 0.5, maxDistance: 2.5, maxPolarAngle: Math.PI / 2 };
+// Screen-glass of monitor.glb (identity node transforms): local x/y/z ranges.
+// The glass is 0.730 wide (z) x 0.440 tall (y). The panel is pixel-sized from
+// these world bounds projected to the screen, so it overlays the actual glass.
+const GLASS_BOUNDS = {
+  min: { x: 0.016268, y: -0.033843, z: -0.35829 },
+  max: { x: 0.036268, y: 0.406157, z: 0.37171 },
+};
 const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
 const ARRIVE_EPS = 0.005;
 
@@ -117,6 +125,38 @@ interface DesktopSceneProps {
 }
 
 type ControlsImpl = ElementRef<typeof OrbitControls>;
+
+/**
+ * Projects the monitor glass's world bounds to the viewport and reports the
+ * pixel size of the showcase panel. Lives inside <Canvas> (needs useThree);
+ * re-projects every frame while zoomed so the panel tracks the camera and any
+ * resize. The onSize setter is the stable setState from DesktopScene.
+ */
+function GlassProjector({ onSize }: { onSize: (w: number, h: number) => void }) {
+  const refs = useThree((s) => ({ gl: s.gl, camera: s.camera }));
+  const last = useRef({ w: 0, h: 0 });
+  useFrame(() => {
+    const renderer = refs.gl;
+    const camera = refs.camera;
+    const w = renderer.domElement.clientWidth;
+    const h = renderer.domElement.clientHeight;
+    if (w === 0 || h === 0) return;
+    const px = (p: [number, number, number]) =>
+      new Vector3(p[0], p[1], p[2]).project(camera);
+    const bl = px([GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.min.z]);
+    const br = px([GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.max.z]);
+    const tl = px([GLASS_BOUNDS.min.x, GLASS_BOUNDS.max.y, GLASS_BOUNDS.min.z]);
+    const size = {
+      w: Math.abs(br.x - bl.x) * w,
+      h: Math.abs(tl.y - bl.y) * h,
+    };
+    if (last.current.w !== size.w || last.current.h !== size.h) {
+      last.current = size;
+      onSize(size.w, size.h);
+    }
+  });
+  return null;
+}
 
 /**
  * Flies the camera to/from the monitor screen center with damped easing.
@@ -215,7 +255,9 @@ function CameraRig({
       oc.minDistance = clamps.minDistance;
       oc.maxDistance = clamps.maxDistance;
       oc.maxPolarAngle = clamps.maxPolarAngle;
-      oc.enabled = true;
+      // Locked while inspecting the monitor: no drag/rotate or wheel-zoom until
+      // the user exits (re-click or Esc), which re-enables controls on the way out.
+      oc.enabled = zoomTarget == null;
       anim.current = null;
       onZoomed(zoomTarget != null);
     }
@@ -237,6 +279,10 @@ export function DesktopScene({
   onCloseShowcase,
 }: DesktopSceneProps) {
   const [zoomed, setZoomed] = useState(false);
+  // Pixel size of the showcase panel, reported by GlassProjector (inside the
+  // Canvas) from the monitor glass's world bounds projected to the viewport.
+  // w/h are the horizontal (z) and vertical (y) world extents in pixels.
+  const [screenSize, setScreenSize] = useState({ w: 0, h: 0 });
 
   const zoomView = useMemo(() => {
     const pc = MODEL_LAYOUT.find((m) => m.key === "pc")!;
@@ -297,9 +343,13 @@ export function DesktopScene({
           onZoomed={setZoomed}
         />
 
-        {zoomed && zoomTarget === "pc" && showcaseContent && (
+        <GlassProjector onSize={(w, h) => setScreenSize({ w, h })} />
+
+        {zoomed && zoomTarget === "pc" && showcaseContent && screenSize.w > 0 && (
           <ShowcaseScreen
             position={zoomView.lookTarget.toArray() as [number, number, number]}
+            widthPx={screenSize.w}
+            heightPx={screenSize.h}
             content={showcaseContent}
             caseStudies={caseStudies}
             onOpen={onOpenCaseStudy}
@@ -334,15 +384,16 @@ export function DesktopScene({
           </>
         )}
 
-        {/* makeDefault so CameraRig can read controls via useThree. Clamps
-            loosen while the monitor is zoomed so the user can orbit it. */}
+        {/* makeDefault so CameraRig can read controls via useThree. Clamps only
+            matter in the idle desk view — while zoomed the camera is locked
+            (oc.enabled stays false), so ZOOMED_CLAMPS is never live. */}
         <OrbitControls
           makeDefault
           enablePan={false}
-          minDistance={zoomed ? ZOOMED_CLAMPS.minDistance : DEFAULT_CLAMPS.minDistance}
-          maxDistance={zoomed ? ZOOMED_CLAMPS.maxDistance : DEFAULT_CLAMPS.maxDistance}
+          minDistance={DEFAULT_CLAMPS.minDistance}
+          maxDistance={DEFAULT_CLAMPS.maxDistance}
           minPolarAngle={Math.PI / 4}
-          maxPolarAngle={zoomed ? ZOOMED_CLAMPS.maxPolarAngle : DEFAULT_CLAMPS.maxPolarAngle}
+          maxPolarAngle={DEFAULT_CLAMPS.maxPolarAngle}
           target={DEFAULT_TARGET}
         />
       </Canvas>

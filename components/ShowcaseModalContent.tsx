@@ -15,6 +15,45 @@ interface ShowcaseModalContentProps {
   onClose: () => void;
 }
 
+/** One project card. Shared by the modal list and the on-monitor slider. */
+export function ShowcaseCard({
+  project,
+  onOpen,
+}: {
+  project: ContentItem;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <article
+      className="rounded-md border border-primary/10 bg-surface p-6 transition-colors hover:border-primary/40"
+    >
+      <div className="flex flex-wrap gap-2">
+        {project.tech?.map((tech) => (
+          <TechPill key={tech} label={tech} />
+        ))}
+      </div>
+      <h3 className="mt-4 font-display text-xl text-text-primary">
+        {project.title}
+      </h3>
+      {project.date && (
+        <p className="mt-1 text-xs text-text-secondary">{project.date}</p>
+      )}
+      <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
+        {project.summary ?? `${toPlainText(project.body).slice(0, 140)}…`}
+      </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onOpen(project.id)}
+        className="mt-4 -ml-2"
+      >
+        Read case study
+        <ArrowRightIcon width={14} height={14} aria-hidden="true" />
+      </Button>
+    </article>
+  );
+}
+
 /**
  * Showcase Projects modal: a card list of case studies; each card opens the
  * detailed study, which restores this modal on close. Opened by the PC.
@@ -32,34 +71,7 @@ export function ShowcaseModalContent({
       <div className="flex-1 overflow-y-auto p-8">
         <div className="flex flex-col gap-6">
           {caseStudies.map((project) => (
-            <article
-              key={project.id}
-              className="rounded-md border border-primary/10 bg-surface p-6 transition-colors hover:border-primary/40"
-            >
-              <div className="flex flex-wrap gap-2">
-                {project.tech?.map((tech) => (
-                  <TechPill key={tech} label={tech} />
-                ))}
-              </div>
-              <h3 className="mt-4 font-display text-xl text-text-primary">
-                {project.title}
-              </h3>
-              {project.date && (
-                <p className="mt-1 text-xs text-text-secondary">{project.date}</p>
-              )}
-              <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-                {project.summary ?? `${toPlainText(project.body).slice(0, 140)}…`}
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onOpen(project.id)}
-                className="mt-4 -ml-2"
-              >
-                Read case study
-                <ArrowRightIcon width={14} height={14} aria-hidden="true" />
-              </Button>
-            </article>
+            <ShowcaseCard key={project.id} project={project} onOpen={onOpen} />
           ))}
         </div>
       </div>
