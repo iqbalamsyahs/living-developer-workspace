@@ -14,6 +14,20 @@ export const journalEntry = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: 'slug',
+      title: 'Slug',
+      description: 'Stable id used by the frontend (e.g. "jrn-japanese").',
+      type: 'slug',
+      options: {source: 'title'},
+    }),
+    defineField({
+      name: 'summary',
+      title: 'Summary',
+      description: 'One-line teaser shown on cards.',
+      type: 'text',
+      rows: 3,
+    }),
+    defineField({
       name: 'date',
       title: 'Date',
       type: 'date',
