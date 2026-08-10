@@ -1,0 +1,273 @@
+import type { PortableTextBlock } from "@portabletext/react";
+
+export type ContentKind =
+  | "caseStudy"
+  | "journal"
+  | "resume"
+  | "about"
+  | "stack"
+  | "showcase"
+  | "contact";
+
+export type StackCategory = "framework" | "language" | "tool" | "cloud";
+
+export interface Experience {
+  position: string;
+  company: string;
+  startDate: string;
+  /** Present when the role is finished. */
+  endDate?: string;
+  description: PortableTextBlock[];
+}
+
+export interface StackItem {
+  name: string;
+  category: StackCategory;
+}
+
+export interface Service {
+  name: string;
+  description: string;
+}
+
+export interface Contact {
+  email: string;
+  blurb?: string;
+  linkedin?: string;
+  github?: string;
+}
+
+export interface ContentItem {
+  id: string;
+  kind: ContentKind;
+  title: string;
+  date?: string;
+  /** caseStudy only: tech stack pills. */
+  tech?: string[];
+  /** Teaser shown on cards; falls back to a slice of the body. */
+  summary?: string;
+  body: PortableTextBlock[];
+  links?: { label: string; href: string }[];
+  /** about only: one-line working philosophy. */
+  philosophy?: string;
+  /** about only: career history. */
+  experiences?: Experience[];
+  /** stack only: tech stack items. */
+  stack?: StackItem[];
+  /** stack only: professional services. */
+  services?: Service[];
+  /** contact only: contact details. */
+  contact?: Contact;
+}
+
+export interface PortfolioData {
+  /** Every modalable item keyed by id (slug ?? _id), including the synthetic
+   *  about/stack/showcase/contact/resume entries built from the profile. */
+  items: Record<string, ContentItem>;
+  caseStudies: ContentItem[];
+  journalEntries: ContentItem[];
+  profile: { name: string; contact?: Contact };
+  siteConfig: SiteConfig;
+}
+
+export interface SiteConfig {
+  brand: string;
+  splashLine: string;
+  heroTagline: string;
+  metaTitle: string;
+  metaDescription: string;
+  headings: Record<
+    "about" | "stack" | "showcase" | "contact" | "resume" | "projects" | "journal" | "experience",
+    string
+  >;
+  ctas: Record<"caseStudy" | "resume" | "readCaseStudy" | "email", string>;
+  categoryLabels: Record<StackCategory, string>;
+  navItems: { id: string; label: string }[];
+}
+
+/** Raw Sanity shape returned by PORTFOLIO_QUERY. */
+export interface PortfolioPayload {
+  profile?: {
+    _id: string;
+    name?: string;
+    philosophy?: string;
+    bio?: PortableTextBlock[];
+    experiences?: Experience[];
+    stack?: StackItem[];
+    services?: Service[];
+    contact?: Contact;
+    resume?: { headline?: PortableTextBlock[]; links?: { label: string; href: string }[] };
+    siteConfig?: Partial<SiteConfig>;
+  };
+  caseStudies?: RawCaseStudy[];
+  journalEntries?: RawJournalEntry[];
+}
+
+interface RawCaseStudy {
+  _id: string;
+  title?: string;
+  date?: string;
+  summary?: string;
+  techStack?: string[];
+  links?: { label: string; href: string }[];
+  body?: PortableTextBlock[];
+  slug?: string;
+}
+
+interface RawJournalEntry {
+  _id: string;
+  title?: string;
+  date?: string;
+  summary?: string;
+  body?: PortableTextBlock[];
+  slug?: string;
+}
+
+/** Portable Text → plain text, for previews and JP detection. */
+export function toPlainText(blocks: PortableTextBlock[] | undefined): string {
+  return (blocks ?? []).map((b) => b._type === "block" ? (b.children ?? []).map((c) => "text" in c ? c.text : "").join("") : "").join("\n");
+}
+
+const headings: SiteConfig["headings"] = {
+  about: "About & Experience",
+  stack: "My Stack & My Services",
+  showcase: "Showcase Projects",
+  contact: "Contact",
+  resume: "Resume",
+  projects: "Selected projects",
+  journal: "Learning journal",
+  experience: "Experience",
+};
+
+const ctas: SiteConfig["ctas"] = {
+  caseStudy: "Read a case study",
+  resume: "View resume",
+  readCaseStudy: "Read case study",
+  email: "Email me",
+};
+
+export const defaultSiteConfig: SiteConfig = {
+  brand: "Ibang.dev",
+  splashLine: "booting the desk…",
+  heroTagline: "Frontend developer building fast, accessible React interfaces.",
+  metaTitle: "Living Developer Workspace",
+  metaDescription: "An interactive 3D/2D developer portfolio built with Next.js.",
+  headings,
+  ctas,
+  categoryLabels: {
+    framework: "Frameworks",
+    language: "Languages",
+    tool: "Tools",
+    cloud: "Cloud & Infra",
+  },
+  navItems: [
+    { id: "showcase", label: "Showcase" },
+    { id: "about", label: "About" },
+    { id: "stack", label: "Stack" },
+    { id: "contact", label: "Contact" },
+    { id: "jrn-japanese", label: "Learning journal" },
+    { id: "resume", label: "Resume" },
+  ],
+};
+
+/** Deep-merge only the top-level keys the editor actually set; drop empties. */
+function mergeDeep<T>(base: T, override?: Partial<T>): T {
+  if (!override) return base;
+  const out = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const k = key as keyof T;
+    if (value === undefined || value === null || value === "") continue;
+    const baseVal = base[k];
+    out[k] =
+      baseVal && typeof baseVal === "object" && typeof value === "object" && !Array.isArray(baseVal) && !Array.isArray(value)
+        ? mergeDeep(baseVal, value as Partial<typeof baseVal>)
+        : (value as T[keyof T]);
+  }
+  return out;
+}
+
+export function buildSiteConfig(raw: PortfolioPayload["profile"]): SiteConfig {
+  return mergeDeep(defaultSiteConfig, raw?.siteConfig);
+}
+
+export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
+  const profile = payload.profile;
+  const siteConfig = buildSiteConfig(profile);
+  const fallbackName = siteConfig.brand.replace(/\.\w+$/, "") || "Ibang";
+
+  const caseStudies: ContentItem[] = (payload.caseStudies ?? []).map((cs) => ({
+    id: cs.slug ?? cs._id,
+    kind: "caseStudy",
+    title: cs.title ?? "Untitled",
+    date: cs.date,
+    tech: cs.techStack,
+    summary: cs.summary,
+    body: cs.body ?? [],
+    links: cs.links,
+  }));
+
+  const journalEntries: ContentItem[] = (payload.journalEntries ?? []).map((je) => ({
+    id: je.slug ?? je._id,
+    kind: "journal",
+    title: je.title ?? "Untitled",
+    date: je.date,
+    summary: je.summary,
+    body: je.body ?? [],
+  }));
+
+  const contact = profile?.contact;
+  const about: ContentItem = {
+    id: "about",
+    kind: "about",
+    title: siteConfig.headings.about,
+    body: profile?.bio ?? [],
+    philosophy: profile?.philosophy,
+    experiences: profile?.experiences,
+  };
+  const stack: ContentItem = {
+    id: "stack",
+    kind: "stack",
+    title: siteConfig.headings.stack,
+    body: [],
+    stack: profile?.stack,
+    services: profile?.services,
+  };
+  const showcase: ContentItem = {
+    id: "showcase",
+    kind: "showcase",
+    title: siteConfig.headings.showcase,
+    body: [],
+  };
+  const resume: ContentItem = {
+    id: "resume",
+    kind: "resume",
+    title: siteConfig.headings.resume,
+    body: profile?.resume?.headline ?? [],
+    links: profile?.resume?.links,
+  };
+  const contactItem: ContentItem = {
+    id: "contact",
+    kind: "contact",
+    title: siteConfig.headings.contact,
+    body: contact?.blurb ? [{ _type: "block", style: "normal", children: [{ _type: "span", marks: [], text: contact.blurb }] }] : [],
+    contact,
+  };
+
+  const items: Record<string, ContentItem> = {
+    about,
+    stack,
+    showcase,
+    resume,
+    contact: contactItem,
+  };
+  for (const cs of caseStudies) items[cs.id] = cs;
+  for (const je of journalEntries) items[je.id] = je;
+
+  return {
+    items,
+    caseStudies,
+    journalEntries,
+    profile: { name: profile?.name ?? fallbackName, contact },
+    siteConfig,
+  };
+}
