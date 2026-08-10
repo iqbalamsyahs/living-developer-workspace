@@ -1,8 +1,10 @@
 "use client";
 
-import type { ContentItem } from "@/lib/content";
+import type { ContentItem } from "@/lib/portfolio";
 import { TechPill } from "@/components/TechPill";
 import { ModalHeader } from "@/components/ModalHeader";
+import { RichText } from "@/components/RichText";
+import { toPlainText } from "@/lib/portfolio";
 
 interface ModalContentProps {
   content: ContentItem;
@@ -27,7 +29,7 @@ function pillVariant(label: string): "default" | "language" | "tool" {
  * close), tech metadata bar, scrollable body, footer links.
  */
 export function ModalContent({ content, onClose }: ModalContentProps) {
-  const hasJapanese = content.body.some((p) => JP_CHARS.test(p));
+  const hasJapanese = JP_CHARS.test(toPlainText(content.body));
 
   return (
     <>
@@ -49,18 +51,7 @@ export function ModalContent({ content, onClose }: ModalContentProps) {
           hasJapanese ? "font-jp" : ""
         }`}
       >
-        {content.body.map((paragraph, index) => (
-          <p
-            key={index}
-            className={
-              index < content.body.length - 1
-                ? "mb-4 text-text-primary/90"
-                : "text-text-primary/90"
-            }
-          >
-            {paragraph}
-          </p>
-        ))}
+        {content.body.length > 0 && <RichText value={content.body} />}
       </div>
 
       {content.links && content.links.length > 0 && (

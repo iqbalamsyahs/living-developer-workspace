@@ -7,6 +7,8 @@ interface SplashScreenProps {
   leaving: boolean;
   /** Fired when the fade-out transition completes — parent unmounts us. */
   onTransitionEnd: () => void;
+  brand: string;
+  splashLine: string;
 }
 
 /**
@@ -15,7 +17,7 @@ interface SplashScreenProps {
  * Opaque at z-50 (above the modal top-layer is fine — nothing can be open
  * during boot); the 3D scene mounts underneath, then this fades out.
  */
-export function SplashScreen({ leaving, onTransitionEnd }: SplashScreenProps) {
+export function SplashScreen({ leaving, onTransitionEnd, brand, splashLine }: SplashScreenProps) {
   // Lock scroll while the splash is up: the StandardView rendered behind it
   // (SSR mobile default) is taller than the viewport, so it would scroll. Must
   // lock BOTH html and body — overflow on body alone doesn't propagate to the
@@ -43,10 +45,10 @@ export function SplashScreen({ leaving, onTransitionEnd }: SplashScreenProps) {
       <div className="flex flex-col items-center gap-5">
         <span aria-hidden="true" className="h-2 w-2 animate-pulse bg-primary" />
         <p className="font-display text-2xl leading-none text-text-primary">
-          Ibang.dev
+          {brand}
         </p>
         <p className="font-mono text-xs text-text-secondary">
-          booting the desk…
+          {splashLine}
         </p>
       </div>
     </div>

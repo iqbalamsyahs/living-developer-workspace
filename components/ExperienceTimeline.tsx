@@ -1,4 +1,5 @@
-import type { Experience } from "@/lib/content";
+import type { Experience } from "@/lib/portfolio";
+import { RichText } from "@/components/RichText";
 
 interface ExperienceTimelineProps {
   experiences: Experience[];
@@ -34,9 +35,7 @@ export function ExperienceTimeline({ experiences }: ExperienceTimelineProps) {
           <p className="mt-0.5 font-mono text-[11px] uppercase tracking-wide text-text-secondary">
             {exp.startDate} – {exp.endDate ?? "Present"}
           </p>
-          <p className="mt-2 text-sm leading-relaxed text-text-primary/80">
-            {exp.description}
-          </p>
+          <RichText value={exp.description} className="mt-2 text-sm leading-relaxed" />
         </li>
       ))}
     </ol>

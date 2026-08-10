@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Check, Copy, EnvelopeSimple } from "@phosphor-icons/react";
-import type { ContentItem } from "@/lib/content";
+import type { ContentItem } from "@/lib/portfolio";
 import { Button } from "@/components/Button";
 import { ModalHeader } from "@/components/ModalHeader";
+import { RichText } from "@/components/RichText";
 
 interface ContactModalContentProps {
   content: ContentItem;
@@ -35,11 +36,7 @@ export function ContactModalContent({ content, onClose }: ContactModalContentPro
       <ModalHeader id={content.id} title={content.title} onClose={onClose} />
 
       <div className="flex-1 overflow-y-auto p-8">
-        {content.body.map((paragraph, index) => (
-          <p key={index} className="mb-4 text-sm leading-relaxed text-text-primary/90">
-            {paragraph}
-          </p>
-        ))}
+        {content.body.length > 0 && <RichText value={content.body} />}
 
         {contact && (
           <div className="mt-6 flex flex-col gap-3">

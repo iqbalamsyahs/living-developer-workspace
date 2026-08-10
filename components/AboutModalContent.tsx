@@ -1,8 +1,10 @@
 "use client";
 
-import type { ContentItem } from "@/lib/content";
+import type { ContentItem } from "@/lib/portfolio";
 import { ModalHeader } from "@/components/ModalHeader";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
+import { RichText } from "@/components/RichText";
+import { toPlainText } from "@/lib/portfolio";
 
 interface AboutModalContentProps {
   content: ContentItem;
@@ -16,7 +18,7 @@ const JP_CHARS = /[぀-ヿ㐀-䶿一-鿿]/;
  * career timeline. Opened by the notebook on the desk.
  */
 export function AboutModalContent({ content, onClose }: AboutModalContentProps) {
-  const hasJapanese = content.body.some((p) => JP_CHARS.test(p));
+  const hasJapanese = JP_CHARS.test(toPlainText(content.body));
 
   return (
     <>
@@ -27,11 +29,7 @@ export function AboutModalContent({ content, onClose }: AboutModalContentProps) 
           hasJapanese ? "font-jp" : ""
         }`}
       >
-        {content.body.map((paragraph, index) => (
-          <p key={index} className="mb-4 text-text-primary/90">
-            {paragraph}
-          </p>
-        ))}
+        {content.body.length > 0 && <RichText value={content.body} />}
 
         {content.philosophy && (
           <blockquote className="mt-6 border-l-2 border-primary/40 pl-4 text-text-secondary">

@@ -4,48 +4,48 @@ import { ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
-import {
-  contentItems,
-  getContent,
-  type StackCategory,
-} from "@/lib/content";
+import { RichText, toPlainText } from "@/components/RichText";
+import type { PortfolioData } from "@/lib/portfolio";
+import type { PortableTextBlock } from "@portabletext/react";
 
 interface StandardViewProps {
+  portfolio: PortfolioData;
   /** Present on desktop when the 3D HUD is the alternative view. */
   onToggleHUD?: () => void;
   onOpen: (id: string) => void;
 }
 
-const caseStudies = contentItems.filter((item) => item.kind === "caseStudy");
-const journalEntries = contentItems.filter((item) => item.kind === "journal");
-const about = getContent("about");
-const stackContent = getContent("stack");
-const contact = getContent("contact");
-
 const JP_CHARS = /[぀-ヿ㐀-䶿一-鿿]/;
 
 // DESIGN.md: solid green for core stack, solid violet for languages and
 // design tools, outline for everything else.
-const CATEGORY_VARIANT: Record<StackCategory, "default" | "language" | "tool"> = {
+const CATEGORY_VARIANT: Record<string, "default" | "language" | "tool"> = {
   framework: "default",
   language: "language",
   tool: "tool",
   cloud: "default",
 };
 
-const CATEGORY_LABEL: Record<StackCategory, string> = {
-  framework: "Frameworks",
-  language: "Languages",
-  tool: "Tools",
-  cloud: "Cloud & Infra",
-};
+/** First paragraph without Japanese text (the English teaser), else the first. */
+function journalPreview(body: PortableTextBlock[]): string {
+  const paras = toPlainText(body)
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return paras.find((p) => !JP_CHARS.test(p)) ?? paras[0] ?? "";
+}
 
 /**
  * Mobile-first 2D layout: the default view on small screens and the opt-in
  * "Standard View" on desktop. Cards here are the 2D fallback for the future
  * 3D desk interactions.
  */
-export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
+export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewProps) {
+  const { siteConfig, caseStudies, journalEntries } = portfolio;
+  const about = portfolio.items.about;
+  const stackContent = portfolio.items.stack;
+  const contact = portfolio.items.contact;
+
   return (
     <main className="mx-auto min-h-[100dvh] w-full max-w-3xl px-6 py-16">
       {onToggleHUD && (
@@ -59,19 +59,17 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
       {/* Hero */}
       <header className="py-16">
         <h1 className="font-display text-4xl leading-none tracking-tight text-text-primary md:text-5xl">
-          Ibang
+          {portfolio.profile.name}
         </h1>
         <p className="mt-4 max-w-[45ch] text-base leading-relaxed text-text-secondary">
-          Frontend developer building fast, accessible React interfaces. 4x
-          faster dashboard loads, an offline-first KYC flow, and a ledger that
-          never loses a record.
+          {siteConfig.heroTagline}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button
             onClick={() => onOpen(caseStudies[0].id)}
             className="group"
           >
-            Read a case study
+            {siteConfig.ctas.caseStudy}
             <ArrowRight
               size={16}
               aria-hidden="true"
@@ -79,7 +77,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
             />
           </Button>
           <Button variant="outline" onClick={() => onOpen("resume")}>
-            View resume
+            {siteConfig.ctas.resume}
           </Button>
         </div>
       </header>
@@ -91,17 +89,12 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
             id="about-heading"
             className="font-display text-2xl text-text-primary"
           >
-            About & Experience
+            {siteConfig.headings.about}
           </h2>
           <div className="mt-8 flex flex-col gap-4">
-            {about.body.map((paragraph, index) => (
-              <p
-                key={index}
-                className="max-w-[60ch] text-sm leading-relaxed text-text-primary/90"
-              >
-                {paragraph}
-              </p>
-            ))}
+            {about.body.length > 0 && (
+              <RichText value={about.body} />
+            )}
             {about.philosophy && (
               <blockquote className="mt-2 max-w-[60ch] border-l-2 border-primary/40 pl-4 text-text-secondary">
                 {about.philosophy}
@@ -111,7 +104,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
           {about.experiences && about.experiences.length > 0 && (
             <div className="mt-10 rounded-md border border-primary/10 bg-surface p-8">
               <h3 className="mb-8 font-display text-lg text-text-primary">
-                Experience
+                {siteConfig.headings.experience}
               </h3>
               <ExperienceTimeline experiences={about.experiences} />
             </div>
@@ -120,20 +113,20 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
       )}
 
       {/* Stack & Services */}
-      {stackContent && stackContent.stack && (
+      {stackContent && stackContent.stack && stackContent.stack.length > 0 && (
         <section aria-labelledby="stack-heading" className="py-16">
           <h2
             id="stack-heading"
             className="font-display text-2xl text-text-primary"
           >
-            My Stack & My Services
+            {siteConfig.headings.stack}
           </h2>
           <div className="mt-8 flex flex-col gap-8">
             {[...new Set(stackContent.stack.map((item) => item.category))].map(
               (category) => (
                 <div key={category}>
                   <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-text-secondary">
-                    {CATEGORY_LABEL[category]}
+                    {siteConfig.categoryLabels[category]}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {stackContent
@@ -142,7 +135,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
                         <TechPill
                           key={item.name}
                           label={item.name}
-                          variant={CATEGORY_VARIANT[category]}
+                          variant={CATEGORY_VARIANT[item.category] ?? "default"}
                         />
                       ))}
                   </div>
@@ -176,7 +169,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
           id="projects-heading"
           className="font-display text-2xl text-text-primary"
         >
-          Selected projects
+          {siteConfig.headings.projects}
         </h2>
         <div className="mt-8 flex flex-col gap-6">
           {caseStudies.map((project) => (
@@ -193,7 +186,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
                 {project.title}
               </h3>
               <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-                {project.body[0].slice(0, 140)}…
+                {project.summary ?? `${toPlainText(project.body).slice(0, 140)}…`}
               </p>
               <Button
                 variant="ghost"
@@ -201,7 +194,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
                 onClick={() => onOpen(project.id)}
                 className="mt-4 -ml-2"
               >
-                Read case study
+                {siteConfig.ctas.readCaseStudy}
                 <ArrowRight size={14} aria-hidden="true" />
               </Button>
             </article>
@@ -215,11 +208,11 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
           id="journal-heading"
           className="font-display text-2xl text-text-primary"
         >
-          Learning journal
+          {siteConfig.headings.journal}
         </h2>
         <div className="mt-8 flex flex-col gap-6 md:grid md:grid-cols-2">
           {journalEntries.map((entry) => {
-            const preview = entry.body.find((p) => !JP_CHARS.test(p)) ?? entry.body[0];
+            const preview = journalPreview(entry.body);
             return (
               <button
                 key={entry.id}
@@ -234,9 +227,11 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
                 {entry.date && (
                   <p className="mt-1 text-xs text-text-secondary">{entry.date}</p>
                 )}
-                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                  {preview.slice(0, 110)}…
-                </p>
+                {preview && (
+                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                    {preview.slice(0, 110)}…
+                  </p>
+                )}
               </button>
             );
           })}
@@ -250,19 +245,21 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
             id="contact-heading"
             className="font-display text-2xl text-text-primary"
           >
-            Contact
+            {siteConfig.headings.contact}
           </h2>
-          <p className="mt-3 max-w-[55ch] text-sm leading-relaxed text-text-secondary">
-            {contact?.body[0] ?? "Open to frontend roles and interesting projects. Email works best."}
-          </p>
+          {contact.body.length > 0 && (
+            <div className="mt-3 max-w-[55ch]">
+              <RichText value={contact.body} />
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap gap-4">
             <a
-              href={`mailto:${contact?.contact?.email ?? "hello@ibang.dev"}`}
+              href={`mailto:${contact.contact?.email ?? ""}`}
               className="rounded-sm border border-primary/60 px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-ink"
             >
-              Email me
+              {siteConfig.ctas.email}
             </a>
-            {contact?.contact?.github && (
+            {contact.contact?.github && (
               <a
                 href={contact.contact.github}
                 target="_blank"
@@ -272,7 +269,7 @@ export function StandardView({ onToggleHUD, onOpen }: StandardViewProps) {
                 GitHub
               </a>
             )}
-            {contact?.contact?.linkedin && (
+            {contact.contact?.linkedin && (
               <a
                 href={contact.contact.linkedin}
                 target="_blank"

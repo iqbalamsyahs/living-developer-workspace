@@ -1,11 +1,13 @@
 "use client";
 
-import type { ContentItem, StackCategory } from "@/lib/content";
+import type { ContentItem, StackCategory } from "@/lib/portfolio";
 import { TechPill } from "@/components/TechPill";
 import { ModalHeader } from "@/components/ModalHeader";
 
 interface StackModalContentProps {
   content: ContentItem;
+  /** Override category labels from siteConfig; falls back to code defaults. */
+  categoryLabels?: Record<StackCategory, string>;
   onClose: () => void;
 }
 
@@ -18,7 +20,7 @@ const CATEGORY_VARIANT: Record<StackCategory, "default" | "language" | "tool"> =
   cloud: "default",
 };
 
-const CATEGORY_LABEL: Record<StackCategory, string> = {
+const DEFAULT_LABELS: Record<StackCategory, string> = {
   framework: "Frameworks",
   language: "Languages",
   tool: "Tools",
@@ -30,7 +32,11 @@ const CATEGORY_LABEL: Record<StackCategory, string> = {
  * feel via pill rows), then services as bordered cards. Opened by the
  * whiteboard on the desk.
  */
-export function StackModalContent({ content, onClose }: StackModalContentProps) {
+export function StackModalContent({
+  content,
+  categoryLabels = DEFAULT_LABELS,
+  onClose,
+}: StackModalContentProps) {
   const stack = content.stack ?? [];
   const categories = [...new Set(stack.map((item) => item.category))];
   const services = content.services ?? [];
@@ -43,7 +49,7 @@ export function StackModalContent({ content, onClose }: StackModalContentProps) 
         {categories.map((category) => (
           <section key={category} className="mb-8">
             <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-text-secondary">
-              {CATEGORY_LABEL[category]}
+              {categoryLabels[category]}
             </h3>
             <div className="flex flex-wrap gap-2">
               {stack

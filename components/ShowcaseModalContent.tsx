@@ -1,20 +1,19 @@
 "use client";
 
 import { ArrowRight } from "@phosphor-icons/react";
-import type { ContentItem } from "@/lib/content";
-import { contentItems } from "@/lib/content";
+import type { ContentItem } from "@/lib/portfolio";
 import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
 import { ModalHeader } from "@/components/ModalHeader";
+import { toPlainText } from "@/lib/portfolio";
 
 interface ShowcaseModalContentProps {
   content: ContentItem;
+  caseStudies: ContentItem[];
   /** Open a specific case study; on close the Showcase modal returns. */
   onOpen: (id: string) => void;
   onClose: () => void;
 }
-
-const caseStudies = contentItems.filter((item) => item.kind === "caseStudy");
 
 /**
  * Showcase Projects modal: a card list of case studies; each card opens the
@@ -22,6 +21,7 @@ const caseStudies = contentItems.filter((item) => item.kind === "caseStudy");
  */
 export function ShowcaseModalContent({
   content,
+  caseStudies,
   onOpen,
   onClose,
 }: ShowcaseModalContentProps) {
@@ -48,7 +48,7 @@ export function ShowcaseModalContent({
                 <p className="mt-1 text-xs text-text-secondary">{project.date}</p>
               )}
               <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-                {project.body[0].slice(0, 140)}…
+                {project.summary ?? `${toPlainText(project.body).slice(0, 140)}…`}
               </p>
               <Button
                 variant="ghost"

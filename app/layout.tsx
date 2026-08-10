@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_JP, Space_Grotesk } from "next/font/google";
+import { getPortfolio } from "@/lib/sanity/fetch";
+import { buildSiteConfig } from "@/lib/portfolio";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,10 +20,14 @@ const notoSansJp = Noto_Sans_JP({
   preload: false,
 });
 
-export const metadata: Metadata = {
-  title: "Living Developer Workspace",
-  description: "An interactive 3D/2D developer portfolio built with Next.js.",
-};
+// Same fetch as page.tsx via React cache() — one GROQ call, deduped.
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = buildSiteConfig((await getPortfolio()).profile);
+  return {
+    title: siteConfig.metaTitle,
+    description: siteConfig.metaDescription,
+  };
+}
 
 export default function RootLayout({
   children,
