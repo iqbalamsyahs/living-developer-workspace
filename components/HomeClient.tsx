@@ -8,7 +8,6 @@ import { Modal } from "@/components/Modal";
 import { ModalContent } from "@/components/ModalContent";
 import { AboutModalContent } from "@/components/AboutModalContent";
 import { StackModalContent } from "@/components/StackModalContent";
-import { ShowcaseModalContent } from "@/components/ShowcaseModalContent";
 import { ContactModalContent } from "@/components/ContactModalContent";
 import { DesktopScene } from "@/components/Scene/DesktopScene";
 import type { ContentItem, PortfolioData } from "@/lib/portfolio";
@@ -29,6 +28,10 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // Non-null while inside a Showcase -> case study drill-down; closing the
   // study restores the Showcase modal instead of clearing.
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  // "pc" while the showcase is shown on the monitor (3D zoom); null when the
+  // showcase is closed and the camera returns to the desk. The PC model and the
+  // HUD showcase button both set this instead of opening a dialog.
+  const [zoomTarget, setZoomTarget] = useState<string | null>(null);
 
   // Boot splash. SSR media query defaults to the mobile StandardView, so the
   // first paint is always Standard; without a cover, desktop users see a
@@ -42,7 +45,14 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     return () => clearTimeout(t);
   }, []);
 
-  const toggleView = () => setStandardOverride((overridden) => !overridden);
+  const toggleView = () => {
+    setStandardOverride((overridden) => !overridden);
+    // Standard View unmounts the 3D scene; drop any zoom/modal so no state
+    // dangles when the user toggles back to HUD.
+    setZoomTarget(null);
+    setActiveModal(null);
+    setReturnTo(null);
+  };
   const closeModal = () => {
     setActiveModal(returnTo);
     setReturnTo(null);
@@ -51,9 +61,38 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     setReturnTo("showcase");
     setActiveModal(id);
   };
+  // The showcase lives on the PC monitor (3D zoom) in HUD mode; anywhere else
+  // it falls back to a normal dialog.
+  const openContent = (id: string) => {
+    if (id === "showcase" && showHUD) {
+      // Toggle: zoomed in on the PC -> click again zooms back out (like Esc).
+      if (zoomTarget === "pc") closeShowcase();
+      else setZoomTarget("pc");
+    } else setActiveModal(id);
+  };
+  const closeShowcase = () => {
+    setActiveModal(null);
+    setZoomTarget(null);
+  };
+
+  // Esc closes the on-monitor showcase (zoom-out) while no dialog is open.
+  // The native <dialog> handles its own Escape, so skip when one is up.
+  useEffect(() => {
+    if (!zoomTarget) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (activeModal && activeModal !== "showcase") return;
+      closeShowcase();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoomTarget, activeModal]);
 
   const showHUD = isDesktop && !standardOverride;
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
+  // True while the showcase is rendered on the monitor; suppresses the dialog
+  // (showcase is never a dialog in HUD mode).
+  const showcaseOnScreen = activeModal === "showcase" && zoomTarget != null;
 
   const renderModalContent = (content: ContentItem, onClose: () => void) => {
     switch (content.kind) {
@@ -64,15 +103,6 @@ export function HomeClient({ portfolio }: HomeClientProps) {
           <StackModalContent
             content={content}
             categoryLabels={portfolio.siteConfig.categoryLabels}
-            onClose={onClose}
-          />
-        );
-      case "showcase":
-        return (
-          <ShowcaseModalContent
-            content={content}
-            caseStudies={portfolio.caseStudies}
-            onOpen={openFromShowcase}
             onClose={onClose}
           />
         );
@@ -96,23 +126,30 @@ export function HomeClient({ portfolio }: HomeClientProps) {
 
       {showHUD ? (
         <>
-          <DesktopScene onOpenModal={setActiveModal} />
+          <DesktopScene
+            onOpenModal={openContent}
+            zoomTarget={zoomTarget}
+            caseStudies={portfolio.caseStudies}
+            showcaseContent={portfolio.items.showcase}
+            onOpenCaseStudy={openFromShowcase}
+            onCloseShowcase={closeShowcase}
+          />
           <HUD
             brand={portfolio.siteConfig.brand}
             navItems={portfolio.siteConfig.navItems}
             onToggleStandard={toggleView}
-            onOpen={setActiveModal}
+            onOpen={openContent}
           />
         </>
       ) : (
         <StandardView
           portfolio={portfolio}
           onToggleHUD={isDesktop ? toggleView : undefined}
-          onOpen={setActiveModal}
+          onOpen={openContent}
         />
       )}
 
-      {activeContent && (
+      {activeContent && !showcaseOnScreen && (
         <Modal
           open
           onClose={closeModal}
