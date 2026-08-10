@@ -21,7 +21,7 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
   {
     key: "desk",
     url: "/glb/desk.glb",
-    position: [0, 0, 0],
+    position: [0.5, 0, 0],
     rotation: [0, 0, 0],
     scale: [1, 1, 1],
   },
@@ -40,7 +40,7 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "pc",
     url: "/glb/pc.glb",
     id: "showcase",
-    position: [-0.0200, 0.9439, -0.0074],
+    position: [0.4800, 0.9439, -0.0074],
     rotation: [0, Math.PI / 2, 0],
     scale: [0.0016, 0.0016, 0.0016],
   },
@@ -48,7 +48,7 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "notebook",
     url: "/glb/notebook.glb",
     id: "about",
-    position: [0.2034, 0.9366, 0.1812],
+    position: [0.7034, 0.9366, 0.1812],
     // Rotate π so the spine rings sit at the back; the top cover faces the camera.
     rotation: [0, Math.PI / 9, 0],
     scale: [3.2145e-7, 3.2145e-7, 3.2145e-7],
@@ -57,7 +57,7 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "whiteboard",
     url: "/glb/whiteboard.glb",
     id: "stack",
-    position: [0.242, 0.84, 1.5],
+    position: [0.742, 0.84, 1.5],
     rotation: [0, Math.PI / 2, 0],
     scale: [1, 1, 1],
   },
@@ -65,7 +65,7 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "phone",
     url: "/glb/phone.glb",
     id: "contact",
-    position: [0.65, 0.943, -0.7],
+    position: [1.15, 0.943, -0.7],
     rotation: [Math.PI / 2, 0, Math.PI / 2],
     scale: [0.15, 0.15, 0.15],
   },
@@ -82,7 +82,7 @@ interface DesktopSceneProps {
 export function DesktopScene({ onOpenModal }: DesktopSceneProps) {
   return (
     <div aria-hidden className="fixed inset-0 z-[-1]">
-      <Canvas dpr={[1, 2]} camera={{ position: [15, 14, 0], fov: 30 }}>
+      <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 30 }}>
         {/* ── Ambient: neutral base so every material reads true ── */}
         <ambientLight intensity={0.22} color="#e6ecf4" />
         {/* ── Hemisphere: cool sky above + warm bounce below — lifts the tops of
