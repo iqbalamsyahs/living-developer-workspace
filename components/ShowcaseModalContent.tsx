@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@radix-ui/react-icons";
 import type { ContentItem } from "@/lib/portfolio";
 import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
@@ -57,7 +57,7 @@ export function ShowcaseModalContent({
                 className="mt-4 -ml-2"
               >
                 Read case study
-                <ArrowRight size={14} aria-hidden="true" />
+                <ArrowRightIcon width={14} height={14} aria-hidden="true" />
               </Button>
             </article>
           ))}

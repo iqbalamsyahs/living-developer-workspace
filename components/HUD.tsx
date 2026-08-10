@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  Books,
-  Monitor,
-  Phone,
-  Stack,
-  TerminalWindow,
-  User,
-} from "@phosphor-icons/react";
+  CodeIcon,
+  DesktopIcon,
+  MobileIcon,
+  PersonIcon,
+  ReaderIcon,
+  StackIcon,
+} from "@radix-ui/react-icons";
 import { Button } from "@/components/Button";
 
 interface HUDProps {
@@ -18,15 +18,15 @@ interface HUDProps {
 }
 
 /** Icon per content id; anything unknown falls back to a generic square. */
-const ICONS: Record<string, typeof Monitor> = {
-  showcase: Monitor,
-  about: User,
-  stack: Stack,
-  contact: Phone,
-  resume: TerminalWindow,
-  "jrn-japanese": Books,
+const ICONS: Record<string, typeof DesktopIcon> = {
+  showcase: DesktopIcon,
+  about: PersonIcon,
+  stack: StackIcon,
+  contact: MobileIcon,
+  resume: CodeIcon,
+  "jrn-japanese": ReaderIcon,
 };
-const FALLBACK_ICON = Monitor;
+const FALLBACK_ICON = DesktopIcon;
 
 /**
  * Desktop HUD overlaying the 3D canvas (z-10; canvas renders at z-[-1]
@@ -75,7 +75,7 @@ export function HUD({ brand, navItems, onToggleStandard, onOpen }: HUDProps) {
               onClick={() => onOpen(item.id)}
               className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-[1px]"
             >
-              <Icon size={18} aria-hidden="true" />
+              <Icon width={18} height={18} aria-hidden="true" />
             </button>
           );
         })}

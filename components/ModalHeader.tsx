@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "@phosphor-icons/react";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { Button } from "@/components/Button";
 
 interface ModalHeaderProps {
@@ -30,7 +30,7 @@ export function ModalHeader({ id, title, subtitle, onClose }: ModalHeaderProps) 
         onClick={onClose}
         className="shrink-0 p-1.5"
       >
-        <X size={16} aria-hidden="true" />
+        <Cross2Icon width={16} height={16} aria-hidden="true" />
       </Button>
     </header>
   );

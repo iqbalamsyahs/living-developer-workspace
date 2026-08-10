@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
@@ -70,8 +70,9 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
             className="group"
           >
             {siteConfig.ctas.caseStudy}
-            <ArrowRight
-              size={16}
+            <ArrowRightIcon
+              width={16}
+              height={16}
               aria-hidden="true"
               className="transition-transform group-hover:translate-x-0.5"
             />
@@ -195,7 +196,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
                 className="mt-4 -ml-2"
               >
                 {siteConfig.ctas.readCaseStudy}
-                <ArrowRight size={14} aria-hidden="true" />
+                <ArrowRightIcon width={14} height={14} aria-hidden="true" />
               </Button>
             </article>
           ))}
