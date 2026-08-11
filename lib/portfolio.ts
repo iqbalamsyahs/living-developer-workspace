@@ -1,7 +1,7 @@
 import type { PortableTextBlock } from "@portabletext/react";
 
 export type ContentKind =
-  | "caseStudy"
+  | "project"
   | "journal"
   | "resume"
   | "about"
@@ -37,13 +37,30 @@ export interface Contact {
   github?: string;
 }
 
+/** Raw Sanity shape of an image reference (before urlFor). */
+export interface RawImage {
+  _type: "image";
+  asset: { _ref: string };
+  alt?: string;
+}
+
 export interface ContentItem {
   id: string;
   kind: ContentKind;
   title: string;
   date?: string;
-  /** caseStudy only: tech stack pills. */
+  /** project only: tech stack pills. */
   tech?: string[];
+  /** project only: cover screenshot shown on the showcase card. */
+  coverImage?: RawImage;
+  /** project only: additional screenshots in the detail modal. */
+  gallery?: RawImage[];
+  /** project only: your role on the project. */
+  role?: string;
+  /** project only: key contributions / features. */
+  highlights?: string[];
+  /** project only: results / impact. */
+  outcomes?: string[];
   /** Teaser shown on cards; falls back to a slice of the body. */
   summary?: string;
   body: PortableTextBlock[];
@@ -64,7 +81,7 @@ export interface PortfolioData {
   /** Every modalable item keyed by id (slug ?? _id), including the synthetic
    *  about/stack/showcase/contact/resume entries built from the profile. */
   items: Record<string, ContentItem>;
-  caseStudies: ContentItem[];
+  projects: ContentItem[];
   journalEntries: ContentItem[];
   profile: { name: string; contact?: Contact };
   siteConfig: SiteConfig;
@@ -99,16 +116,21 @@ export interface PortfolioPayload {
     resume?: { headline?: PortableTextBlock[]; links?: { label: string; href: string }[] };
     siteConfig?: Partial<SiteConfig>;
   };
-  caseStudies?: RawCaseStudy[];
+  projects?: RawProject[];
   journalEntries?: RawJournalEntry[];
 }
 
-interface RawCaseStudy {
+interface RawProject {
   _id: string;
   title?: string;
   date?: string;
   summary?: string;
   techStack?: string[];
+  coverImage?: RawImage;
+  gallery?: RawImage[];
+  role?: string;
+  highlights?: string[];
+  outcomes?: string[];
   links?: { label: string; href: string }[];
   body?: PortableTextBlock[];
   slug?: string;
@@ -140,9 +162,9 @@ const headings: SiteConfig["headings"] = {
 };
 
 const ctas: SiteConfig["ctas"] = {
-  caseStudy: "Read a case study",
+  caseStudy: "View project",
   resume: "View resume",
-  readCaseStudy: "Read case study",
+  readCaseStudy: "View project",
   email: "Email me",
 };
 
@@ -195,12 +217,17 @@ export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
   const siteConfig = buildSiteConfig(profile);
   const fallbackName = siteConfig.brand.replace(/\.\w+$/, "") || "Ibang";
 
-  const caseStudies: ContentItem[] = (payload.caseStudies ?? []).map((cs) => ({
+  const projects: ContentItem[] = (payload.projects ?? []).map((cs) => ({
     id: cs.slug ?? cs._id,
-    kind: "caseStudy",
+    kind: "project",
     title: cs.title ?? "Untitled",
     date: cs.date,
     tech: cs.techStack,
+    coverImage: cs.coverImage,
+    gallery: cs.gallery,
+    role: cs.role,
+    highlights: cs.highlights,
+    outcomes: cs.outcomes,
     summary: cs.summary,
     body: cs.body ?? [],
     links: cs.links,
@@ -260,12 +287,12 @@ export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
     resume,
     contact: contactItem,
   };
-  for (const cs of caseStudies) items[cs.id] = cs;
+  for (const p of projects) items[p.id] = p;
   for (const je of journalEntries) items[je.id] = je;
 
   return {
     items,
-    caseStudies,
+    projects,
     journalEntries,
     profile: { name: profile?.name ?? fallbackName, contact },
     siteConfig,

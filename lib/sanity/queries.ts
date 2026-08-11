@@ -12,8 +12,9 @@ export const PORTFOLIO_QUERY = `{
     "experiences": experiences[]->{position, company, startDate, endDate, description},
     stack, services
   },
-  "caseStudies": *[_type == "projectCaseStudy"]|order(date desc){
-    _id, title, date, summary, techStack, links, body, "slug": slug.current
+  "projects": *[_type == "project"]|order(date desc){
+    _id, title, date, summary, techStack, coverImage, gallery, role, highlights,
+    outcomes, links, body, "slug": slug.current
   },
   "journalEntries": *[_type == "journalEntry"]|order(date desc){
     _id, title, date, summary, body, "slug": slug.current

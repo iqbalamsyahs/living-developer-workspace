@@ -5,12 +5,13 @@ import type { ContentItem } from "@/lib/portfolio";
 import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
 import { ModalHeader } from "@/components/ModalHeader";
+import { SanityImage } from "@/components/SanityImage";
 import { toPlainText } from "@/lib/portfolio";
 
 interface ShowcaseModalContentProps {
   content: ContentItem;
-  caseStudies: ContentItem[];
-  /** Open a specific case study; on close the Showcase modal returns. */
+  projects: ContentItem[];
+  /** Open a specific project; on close the Showcase modal returns. */
   onOpen: (id: string) => void;
   onClose: () => void;
 }
@@ -27,6 +28,17 @@ export function ShowcaseCard({
     <article
       className="rounded-md border border-primary/10 bg-surface p-6 transition-colors hover:border-primary/40"
     >
+      {project.coverImage && (
+        <div className="mb-4 overflow-hidden rounded-sm border border-primary/10">
+          <SanityImage
+            image={project.coverImage}
+            width={800}
+            alt={project.title}
+            className="block w-full"
+            aspect="16/9"
+          />
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {project.tech?.map((tech) => (
           <TechPill key={tech} label={tech} />
@@ -47,7 +59,7 @@ export function ShowcaseCard({
         onClick={() => onOpen(project.id)}
         className="mt-4 -ml-2"
       >
-        Read case study
+        View project
         <ArrowRightIcon width={14} height={14} aria-hidden="true" />
       </Button>
     </article>
@@ -55,12 +67,12 @@ export function ShowcaseCard({
 }
 
 /**
- * Showcase Projects modal: a card list of case studies; each card opens the
- * detailed study, which restores this modal on close. Opened by the PC.
+ * Showcase Projects modal: a card list of projects; each card opens the
+ * detailed project, which restores this modal on close. Opened by the PC.
  */
 export function ShowcaseModalContent({
   content,
-  caseStudies,
+  projects,
   onOpen,
   onClose,
 }: ShowcaseModalContentProps) {
@@ -70,7 +82,7 @@ export function ShowcaseModalContent({
 
       <div className="flex-1 overflow-y-auto p-8">
         <div className="flex flex-col gap-6">
-          {caseStudies.map((project) => (
+          {projects.map((project) => (
             <ShowcaseCard key={project.id} project={project} onOpen={onOpen} />
           ))}
         </div>

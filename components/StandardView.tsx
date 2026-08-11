@@ -5,6 +5,7 @@ import { Button } from "@/components/Button";
 import { TechPill } from "@/components/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
 import { RichText, toPlainText } from "@/components/RichText";
+import { SanityImage } from "@/components/SanityImage";
 import type { PortfolioData } from "@/lib/portfolio";
 import type { PortableTextBlock } from "@portabletext/react";
 
@@ -41,7 +42,7 @@ function journalPreview(body: PortableTextBlock[]): string {
  * 3D desk interactions.
  */
 export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewProps) {
-  const { siteConfig, caseStudies, journalEntries } = portfolio;
+  const { siteConfig, projects, journalEntries } = portfolio;
   const about = portfolio.items.about;
   const stackContent = portfolio.items.stack;
   const contact = portfolio.items.contact;
@@ -66,7 +67,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button
-            onClick={() => onOpen(caseStudies[0].id)}
+            onClick={() => onOpen(projects[0]?.id)}
             className="group"
           >
             {siteConfig.ctas.caseStudy}
@@ -173,11 +174,22 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
           {siteConfig.headings.projects}
         </h2>
         <div className="mt-8 flex flex-col gap-6">
-          {caseStudies.map((project) => (
+          {projects.map((project) => (
             <article
               key={project.id}
               className="rounded-md border border-primary/10 bg-surface p-6 transition-colors hover:border-primary/40"
             >
+              {project.coverImage && (
+                <div className="mb-4 overflow-hidden rounded-sm border border-primary/10">
+                  <SanityImage
+                    image={project.coverImage}
+                    width={800}
+                    alt={project.title}
+                    className="block w-full"
+                    aspect="16/9"
+                  />
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 {project.tech?.map((tech) => (
                   <TechPill key={tech} label={tech} />
