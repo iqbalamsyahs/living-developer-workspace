@@ -6,6 +6,7 @@ import { OrbitControls, ContactShadows, Grid } from "@react-three/drei";
 import { MathUtils, Vector3 } from "three";
 import { SceneModel, type SceneModelLayout } from "./SceneModel";
 import { ShowcaseScreen } from "./ShowcaseScreen";
+import { ContactScreen } from "./ContactScreen";
 import type { ContentItem } from "@/lib/portfolio";
 
 // Calibration flag from .env.local (NEXT_PUBLIC_ is inlined into the client
@@ -83,18 +84,39 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
   },
 ];
 
-// Where the camera lands to inspect the PC monitor, and where the HTML
-// showcase panel is anchored. screenOffset = world offset from the pc group
-// origin to the monitor screen center. Measured from monitor.glb: the
-// screen-glass mesh (identity node transforms) centers at local
-// (0.026, 0.186, 0.007) and spans 0.730 (z) x 0.440 (y). camDist = distance
-// the camera parks in front of the screen. The screen faces +X, hence the
-// camera sits on +X of the screen center.
+// Where the camera lands to inspect an object's screen, and where the HTML
+// panel is anchored. screenOffset = world offset from the object group origin
+// to its screen center. camDist = distance the camera parks in front of the
+// screen; camDir = unit vector from the screen center toward the camera
+// (perpendicular to the screen); camUp = camera.up while inspecting. The
+// default up (0,1,0) is parallel to the look direction when looking straight
+// down at the phone, which degenerates lookAt — the phone's camUp keeps the
+// panel's long axis along the phone's long axis (world X).
 const ZOOM_VIEWS: Record<
   string,
-  { screenOffset: [number, number, number]; camDist: number }
+  {
+    screenOffset: [number, number, number];
+    camDist: number;
+    camDir: [number, number, number];
+    camUp: [number, number, number];
+  }
 > = {
-  pc: { screenOffset: [0.026, 0.186, 0.007], camDist: 1 },
+  // PC monitor screen (measured from monitor.glb: screen-glass centers at
+  // local (0.026, 0.186, 0.007), spans 0.730 (z) x 0.440 (y)). Faces +X.
+  pc: { screenOffset: [0.026, 0.186, 0.007], camDist: 1, camDir: [1, 0, 0], camUp: [0, 1, 0] },
+  // Flat phone (see MODEL_LAYOUT): lies flat, screen faces +Y at world y 0.9536,
+  // spans x [1.2294, 1.4484] x z [-0.7532, -0.6482], center (1.3389, 0.9536, -0.7).
+  // camDir [0,1,0] parks the camera directly above. camUp [-1,0,0] puts world
+  // -X (notch end at x=1.226) at the top of the screen → portrait, notch-up.
+  // camUp must be perpendicular to camDir: both [0,1,0] is degenerate in
+  // Three.js lookAt → undefined camera orientation → bad framing.
+  // camDist 0.4 shows the phone with bezel visible; tune as needed.
+  contact: {
+    screenOffset: [-0.010, 0, -0.0006],
+    camDist: 0.4,
+    camDir: [0, 1, 0],
+    camUp: [-1, 0, 0],
+  },
 };
 
 const DEFAULT_TARGET: [number, number, number] = [0.25, 0.5, 0];
@@ -107,8 +129,34 @@ const ZOOMED_CLAMPS = { minDistance: 0.5, maxDistance: 2.5, maxPolarAngle: Math.
 // The glass is 0.730 wide (z) x 0.440 tall (y). The panel is pixel-sized from
 // these world bounds projected to the screen, so it overlays the actual glass.
 const GLASS_BOUNDS = {
-  min: { x: 0.016268, y: -0.033843, z: -0.35829 },
-  max: { x: 0.036268, y: 0.446157, z: 0.43671 },
+  min: { x: 0.645, y: -0.047843, z: -0.37929 },
+  max: { x: 0.845, y: 0.445057, z: 0.43671 },
+};
+
+// World-space screen rectangles keyed by zoom target, as three corners
+// (bottom-left, bottom-right, top-left). The panel's width is the projection
+// of bl→br, its height the projection of bl→tl, so GlassProjector is
+// orientation-agnostic. pc keeps the tuned GLASS_BOUNDS numbers; contact uses
+// the phone display surface measured against the flat phone's MODEL_LAYOUT
+// transform: display (mat17) local x [-0.355,0.345] (width), local y
+// [-0.656,0.804] (height), front face local z -0.071; world (R 90° X, 90° Z,
+// scale 0.15, pos [1.35,0.943,-0.7]) the screen faces +Y and spans
+// x [1.2294,1.4484] (width) x z [-0.7532,-0.6482] (height), at y 0.9536.
+// Viewed from above (camDir +Y) the long axis is world X.
+const SCREENS: Record<
+  string,
+  { bl: [number, number, number]; br: [number, number, number]; tl: [number, number, number] }
+> = {
+  pc: {
+    bl: [GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.min.z],
+    br: [GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.max.z],
+    tl: [GLASS_BOUNDS.min.x, GLASS_BOUNDS.max.y, GLASS_BOUNDS.min.z],
+  },
+  contact: {
+    bl: [1.2094, 0.95, -0.622],
+    br: [1.4484, 0.95, -0.622],
+    tl: [1.2094, 0.95, -0.7532],
+  },
 };
 const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
 const ARRIVE_EPS = 0.005;
@@ -120,18 +168,30 @@ interface DesktopSceneProps {
   zoomTarget: string | null;
   projects: ContentItem[];
   showcaseContent?: ContentItem;
+  /** Contact item rendered on the phone screen while its zoom is active. */
+  contactContent?: ContentItem;
   onCloseShowcase: () => void;
 }
 
 type ControlsImpl = ElementRef<typeof OrbitControls>;
 
 /**
- * Projects the monitor glass's world bounds to the viewport and reports the
- * pixel size of the showcase panel. Lives inside <Canvas> (needs useThree);
+ * Projects the inspected screen's world corners to the viewport and reports
+ * the pixel size of the panel. Lives inside <Canvas> (needs useThree);
  * re-projects every frame while zoomed so the panel tracks the camera and any
  * resize. The onSize setter is the stable setState from DesktopScene.
+ * Orientation-agnostic: whichever projected edge is closer to horizontal is
+ * the panel's width, the other its height. This lets the same logic serve the
+ * monitor (long axis horizontal) and the phone presented portrait (long axis
+ * vertical on screen).
  */
-function GlassProjector({ onSize }: { onSize: (w: number, h: number) => void }) {
+function GlassProjector({
+  corners,
+  onSize,
+}: {
+  corners: { bl: [number, number, number]; br: [number, number, number]; tl: [number, number, number] };
+  onSize: (w: number, h: number) => void;
+}) {
   const refs = useThree((s) => ({ gl: s.gl, camera: s.camera }));
   const last = useRef({ w: 0, h: 0 });
   useFrame(() => {
@@ -142,12 +202,25 @@ function GlassProjector({ onSize }: { onSize: (w: number, h: number) => void }) 
     if (w === 0 || h === 0) return;
     const px = (p: [number, number, number]) =>
       new Vector3(p[0], p[1], p[2]).project(camera);
-    const bl = px([GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.min.z]);
-    const br = px([GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.max.z]);
-    const tl = px([GLASS_BOUNDS.min.x, GLASS_BOUNDS.max.y, GLASS_BOUNDS.min.z]);
+    const bl = px(corners.bl);
+    const br = px(corners.br);
+    const tl = px(corners.tl);
+    // Edge vectors in viewport pixels. project() maps clip space to NDC
+    // (-1..1), so an edge spanning full width is 2.0 NDC, not 1.0 — divide by
+    // 2 to convert to true viewport pixels. (Without it the panel is 2x too
+    // big; the PC panel only looked fine because its camDist is far enough that
+    // 2x still fit the viewport.) The screen is axis-aligned on screen under
+    // the locked perpendicular camera (one edge horizontal, the other
+    // vertical), so the dominant component of each edge tells which is which.
+    const ex = ((br.x - bl.x) * w) / 2;
+    const ey = ((br.y - bl.y) * h) / 2;
+    const fx = ((tl.x - bl.x) * w) / 2;
+    const fy = ((tl.y - bl.y) * h) / 2;
+    const len = (x: number, y: number) => Math.hypot(x, y);
+    const brIsHorizontal = Math.abs(ex) >= Math.abs(ey);
     const size = {
-      w: Math.abs(br.x - bl.x) * w,
-      h: Math.abs(tl.y - bl.y) * h,
+      w: brIsHorizontal ? len(ex, ey) : len(fx, fy),
+      h: brIsHorizontal ? len(fx, fy) : len(ex, ey),
     };
     if (last.current.w !== size.w || last.current.h !== size.h) {
       last.current = size;
@@ -167,11 +240,13 @@ function CameraRig({
   zoomTarget,
   zoomPos,
   zoomLookTarget,
+  zoomUp,
   onZoomed,
 }: {
   zoomTarget: string | null;
   zoomPos: Vector3;
   zoomLookTarget: Vector3;
+  zoomUp: [number, number, number];
   onZoomed: (zoomed: boolean) => void;
 }) {
   const camera = useThree((s) => s.camera);
@@ -201,13 +276,19 @@ function CameraRig({
 
     // --- Detect zoomTarget transition on the first frame it changes ---
     if (zoomTarget !== prevZt.current) {
+      const prev = prevZt.current;
       prevZt.current = zoomTarget;
       if (zoomTarget) {
-        // Zoom-in: capture current pose, fly toward the monitor.
-        restore.current = {
-          pos: camera.position.clone(),
-          target: oc.target.clone(),
-        };
+        // Zoom-in: capture the restore pose only when coming from the idle
+        // desk view. A zoom → zoom transition (pc → contact) must NOT
+        // overwrite it — otherwise closing the second zoom flies back to the
+        // first zoom instead of the desk.
+        if (prev == null) {
+          restore.current = {
+            pos: camera.position.clone(),
+            target: oc.target.clone(),
+          };
+        }
         anim.current = {
           from: camera.position.clone(),
           fromTarget: oc.target.clone(),
@@ -242,6 +323,7 @@ function CameraRig({
       MathUtils.damp(target.y, a.toTarget.y, DAMP_LAMBDA, delta),
       MathUtils.damp(target.z, a.toTarget.z, DAMP_LAMBDA, delta),
     );
+    camera.up.set(...zoomUp);
     camera.lookAt(target);
 
     if (
@@ -250,6 +332,7 @@ function CameraRig({
     ) {
       pos.copy(a.to);
       target.copy(a.toTarget);
+      camera.up.set(...zoomUp);
       const clamps = zoomTarget ? ZOOMED_CLAMPS : DEFAULT_CLAMPS;
       oc.minDistance = clamps.minDistance;
       oc.maxDistance = clamps.maxDistance;
@@ -274,6 +357,7 @@ export function DesktopScene({
   zoomTarget,
   projects,
   showcaseContent,
+  contactContent,
   onCloseShowcase,
 }: DesktopSceneProps) {
   const [zoomed, setZoomed] = useState(false);
@@ -283,16 +367,21 @@ export function DesktopScene({
   const [screenSize, setScreenSize] = useState({ w: 0, h: 0 });
 
   const zoomView = useMemo(() => {
-    const pc = MODEL_LAYOUT.find((m) => m.key === "pc")!;
     const cfg = ZOOM_VIEWS[zoomTarget ?? "pc"] ?? ZOOM_VIEWS.pc;
-    const lookTarget = new Vector3(
-      pc.position[0] + cfg.screenOffset[0],
-      pc.position[1] + cfg.screenOffset[1],
-      pc.position[2] + cfg.screenOffset[2],
+    // screenOffset is relative to the object group origin, so add it to the
+    // object's world position.
+    const anchor = MODEL_LAYOUT.find(
+      (m) => m.id === (zoomTarget ?? "showcase"),
     );
+    const base = anchor
+      ? new Vector3(...anchor.position)
+      : new Vector3(...MODEL_LAYOUT.find((m) => m.key === "pc")!.position);
+    const lookTarget = base.clone().add(new Vector3(...cfg.screenOffset));
+    const camDir = new Vector3(...cfg.camDir);
     return {
       lookTarget,
-      camPos: lookTarget.clone().add(new Vector3(cfg.camDist, 0, 0)),
+      camPos: lookTarget.clone().add(camDir.multiplyScalar(cfg.camDist)),
+      camUp: cfg.camUp,
     };
   }, [zoomTarget]);
 
@@ -338,10 +427,14 @@ export function DesktopScene({
           zoomTarget={zoomTarget}
           zoomPos={zoomView.camPos}
           zoomLookTarget={zoomView.lookTarget}
+          zoomUp={zoomView.camUp}
           onZoomed={setZoomed}
         />
 
-        <GlassProjector onSize={(w, h) => setScreenSize({ w, h })} />
+        <GlassProjector
+          corners={SCREENS[zoomTarget ?? "pc"] ?? SCREENS.pc}
+          onSize={(w, h) => setScreenSize({ w, h })}
+        />
 
         {zoomed && zoomTarget === "pc" && showcaseContent && screenSize.w > 0 && (
           <ShowcaseScreen
@@ -350,6 +443,16 @@ export function DesktopScene({
             heightPx={screenSize.h}
             content={showcaseContent}
             projects={projects}
+            onClose={onCloseShowcase}
+          />
+        )}
+
+        {zoomed && zoomTarget === "contact" && contactContent && screenSize.w > 0 && (
+          <ContactScreen
+            position={zoomView.lookTarget.toArray() as [number, number, number]}
+            widthPx={screenSize.w}
+            heightPx={screenSize.h}
+            content={contactContent}
             onClose={onCloseShowcase}
           />
         )}

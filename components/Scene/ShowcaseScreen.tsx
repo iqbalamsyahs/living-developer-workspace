@@ -34,7 +34,7 @@ interface ShowcaseScreenProps {
  * The projected glass bounds include bezels and model padding, so the panel is
  * scaled down to sit inside the actual display area.
  */
-const GLASS_SCALE = 0.7; // panel size as a fraction of the glass projection
+const GLASS_SCALE = 0.8; // panel size as a fraction of the glass projection
 
 export function ShowcaseScreen({
   position,

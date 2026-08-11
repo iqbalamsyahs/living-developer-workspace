@@ -54,10 +54,13 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // The showcase lives on the PC monitor (3D zoom) in HUD mode; anywhere else
   // it falls back to a normal dialog.
   const openContent = (id: string) => {
-    if (id === "showcase" && showHUD) {
-      // Toggle: zoomed in on the PC -> click again zooms back out (like Esc).
-      if (zoomTarget === "pc") closeShowcase();
-      else setZoomTarget("pc");
+    // In HUD mode, the showcase lives on the PC monitor and the contact screen
+    // on the phone (both 3D zooms); anywhere else they fall back to a dialog.
+    const zt = id === "showcase" ? "pc" : id === "contact" ? "contact" : null;
+    if (zt && showHUD) {
+      // Toggle: zoomed in on the object -> click again zooms back out (like Esc).
+      if (zoomTarget === zt) closeShowcase();
+      else setZoomTarget(zt);
     } else setActiveModal(id);
   };
   const closeShowcase = () => {
@@ -123,6 +126,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             zoomTarget={zoomTarget}
             projects={portfolio.projects}
             showcaseContent={portfolio.items.showcase}
+            contactContent={portfolio.items.contact}
             onCloseShowcase={closeShowcase}
           />
           <HUD
