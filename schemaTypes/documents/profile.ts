@@ -156,14 +156,32 @@ export const profile = defineType({
           rows: 2,
         }),
         defineField({
-          name: 'linkedin',
-          title: 'LinkedIn URL',
-          type: 'url',
-        }),
-        defineField({
-          name: 'github',
-          title: 'GitHub URL',
-          type: 'url',
+          name: 'socials',
+          title: 'Social Links',
+          type: 'array',
+          of: [
+            defineArrayMember({
+              name: 'social',
+              title: 'Social',
+              type: 'object',
+              fields: [
+                defineField({
+                  name: 'platform',
+                  title: 'Platform',
+                  type: 'string',
+                  description:
+                    'e.g. github, linkedin, x, instagram… Known names get their icon in the UI.',
+                  validation: (rule) => rule.required(),
+                }),
+                defineField({
+                  name: 'url',
+                  title: 'URL',
+                  type: 'url',
+                  validation: (rule) => rule.required(),
+                }),
+              ],
+            }),
+          ],
         }),
       ],
     }),
