@@ -35,9 +35,9 @@ export const deskObject = defineType({
     defineField({
       name: 'contentReference',
       title: 'Content Reference',
-      description: 'The profile, case study, or journal entry opened when this object is clicked.',
+      description: 'The profile, project, or journal entry opened when this object is clicked.',
       type: 'reference',
-      to: [{type: 'projectCaseStudy'}, {type: 'journalEntry'}, {type: 'profile'}],
+      to: [{type: 'project'}, {type: 'journalEntry'}, {type: 'profile'}],
     }),
   ],
   preview: {
