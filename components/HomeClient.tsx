@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HUD } from "@/components/HUD";
-import { StandardView } from "@/components/StandardView";
-import { SplashScreen } from "@/components/SplashScreen";
-import { Modal } from "@/components/Modal";
-import { ModalContent } from "@/components/ModalContent";
-import { ProjectModalContent } from "@/components/ProjectModalContent";
-import { AboutModalContent } from "@/components/AboutModalContent";
-import { StackModalContent } from "@/components/StackModalContent";
-import { ContactModalContent } from "@/components/ContactModalContent";
-import { DesktopScene } from "@/components/Scene/DesktopScene";
+import { HUD } from "@/components/view/HUD";
+import { StandardView } from "@/components/view/StandardView";
+import { SplashScreen } from "@/components/view/SplashScreen";
+import { Modal } from "@/components/ui/Modal";
+import { ModalContent } from "@/components/modal/ModalContent";
+import { ProjectModalContent } from "@/components/modal/ProjectModalContent";
+import { AboutModalContent } from "@/components/modal/AboutModalContent";
+import { StackModalContent } from "@/components/modal/StackModalContent";
+import { ContactModalContent } from "@/components/modal/ContactModalContent";
+import { DesktopScene } from "@/components/scene/DesktopScene";
 import type { ContentItem, PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 

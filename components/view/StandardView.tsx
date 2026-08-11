@@ -1,11 +1,11 @@
 "use client";
 
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import { Button } from "@/components/Button";
-import { TechPill } from "@/components/TechPill";
+import { Button } from "@/components/ui/Button";
+import { TechPill } from "@/components/ui/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
-import { RichText, toPlainText } from "@/components/RichText";
-import { SanityImage } from "@/components/SanityImage";
+import { RichText, toPlainText } from "@/components/ui/RichText";
+import { SanityImage } from "@/components/ui/SanityImage";
 import type { PortfolioData } from "@/lib/portfolio";
 import type { PortableTextBlock } from "@portabletext/react";
 

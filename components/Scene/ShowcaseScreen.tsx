@@ -4,9 +4,9 @@ import { useRef, useState, type RefObject } from "react";
 import { Html } from "@react-three/drei";
 import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon } from "@radix-ui/react-icons";
 import type { ContentItem } from "@/lib/portfolio";
-import { ShowcaseGrid } from "@/components/ShowcaseGrid";
-import { ProjectDetail } from "@/components/ProjectDetail";
-import { Button } from "@/components/Button";
+import { ShowcaseGrid } from "../showcase/ShowcaseGrid";
+import { ProjectDetail } from "../showcase/ProjectDetail";
+import { Button } from "../ui/Button";
 
 interface ShowcaseScreenProps {
   /** World-space anchor: the PC monitor screen center. The panel sticks to it

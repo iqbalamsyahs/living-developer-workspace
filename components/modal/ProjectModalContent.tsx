@@ -1,8 +1,8 @@
 "use client";
 
 import type { ContentItem } from "@/lib/portfolio";
-import { ModalHeader } from "@/components/ModalHeader";
-import { ProjectDetail } from "@/components/ProjectDetail";
+import { ModalHeader } from "@/components/ui/ModalHeader";
+import { ProjectDetail } from "@/components/showcase/ProjectDetail";
 
 interface ProjectModalContentProps {
   content: ContentItem;

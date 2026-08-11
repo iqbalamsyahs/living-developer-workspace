@@ -1,9 +1,9 @@
 "use client";
 
 import type { ContentItem } from "@/lib/portfolio";
-import { TechPill } from "@/components/TechPill";
-import { ModalHeader } from "@/components/ModalHeader";
-import { RichText } from "@/components/RichText";
+import { TechPill } from "@/components/ui/TechPill";
+import { ModalHeader } from "@/components/ui/ModalHeader";
+import { RichText } from "@/components/ui/RichText";
 import { toPlainText } from "@/lib/portfolio";
 
 interface ModalContentProps {

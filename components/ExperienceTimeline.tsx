@@ -1,5 +1,5 @@
 import type { Experience } from "@/lib/portfolio";
-import { RichText } from "@/components/RichText";
+import { RichText } from "@/components/ui/RichText";
 
 interface ExperienceTimelineProps {
   experiences: Experience[];

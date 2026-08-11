@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { CheckIcon, CopyIcon, EnvelopeClosedIcon } from "@radix-ui/react-icons";
 import type { ContentItem } from "@/lib/portfolio";
-import { Button } from "@/components/Button";
-import { ModalHeader } from "@/components/ModalHeader";
-import { RichText } from "@/components/RichText";
+import { Button } from "@/components/ui/Button";
+import { ModalHeader } from "@/components/ui/ModalHeader";
+import { RichText } from "@/components/ui/RichText";
 
 interface ContactModalContentProps {
   content: ContentItem;

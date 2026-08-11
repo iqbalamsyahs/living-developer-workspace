@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import type { ContentItem, RawImage } from "@/lib/portfolio";
-import { TechPill } from "@/components/TechPill";
-import { RichText } from "@/components/RichText";
-import { SanityImage } from "@/components/SanityImage";
+import { TechPill } from "@/components/ui/TechPill";
+import { RichText } from "@/components/ui/RichText";
+import { SanityImage } from "@/components/ui/SanityImage";
 import { toPlainText } from "@/lib/portfolio";
 
 interface ProjectDetailProps {

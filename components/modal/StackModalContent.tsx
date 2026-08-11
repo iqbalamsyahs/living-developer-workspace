@@ -1,8 +1,8 @@
 "use client";
 
 import type { ContentItem, StackCategory } from "@/lib/portfolio";
-import { TechPill } from "@/components/TechPill";
-import { ModalHeader } from "@/components/ModalHeader";
+import { TechPill } from "@/components/ui/TechPill";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 
 interface StackModalContentProps {
   content: ContentItem;

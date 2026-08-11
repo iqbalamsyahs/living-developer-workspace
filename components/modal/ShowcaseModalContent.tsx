@@ -2,10 +2,10 @@
 
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import type { ContentItem } from "@/lib/portfolio";
-import { Button } from "@/components/Button";
-import { TechPill } from "@/components/TechPill";
-import { ModalHeader } from "@/components/ModalHeader";
-import { SanityImage } from "@/components/SanityImage";
+import { Button } from "@/components/ui/Button";
+import { TechPill } from "@/components/ui/TechPill";
+import { ModalHeader } from "@/components/ui/ModalHeader";
+import { SanityImage } from "@/components/ui/SanityImage";
 import { toPlainText } from "@/lib/portfolio";
 
 interface ShowcaseModalContentProps {

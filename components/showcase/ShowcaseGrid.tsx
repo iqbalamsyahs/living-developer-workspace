@@ -2,8 +2,8 @@
 
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import type { ContentItem } from "@/lib/portfolio";
-import { TechPill } from "@/components/TechPill";
-import { SanityImage } from "@/components/SanityImage";
+import { TechPill } from "@/components/ui/TechPill";
+import { SanityImage } from "@/components/ui/SanityImage";
 import { toPlainText } from "@/lib/portfolio";
 
 interface ShowcaseGridProps {

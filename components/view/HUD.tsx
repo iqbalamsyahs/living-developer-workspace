@@ -8,7 +8,7 @@ import {
   ReaderIcon,
   StackIcon,
 } from "@radix-ui/react-icons";
-import { Button } from "@/components/Button";
+import { Button } from "@/components/ui/Button";
 
 interface HUDProps {
   brand: string;

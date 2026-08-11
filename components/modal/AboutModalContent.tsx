@@ -1,9 +1,9 @@
 "use client";
 
 import type { ContentItem } from "@/lib/portfolio";
-import { ModalHeader } from "@/components/ModalHeader";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
-import { RichText } from "@/components/RichText";
+import { RichText } from "@/components/ui/RichText";
 import { toPlainText } from "@/lib/portfolio";
 
 interface AboutModalContentProps {
