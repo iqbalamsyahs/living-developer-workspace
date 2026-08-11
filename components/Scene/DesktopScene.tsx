@@ -94,7 +94,7 @@ const ZOOM_VIEWS: Record<
   string,
   { screenOffset: [number, number, number]; camDist: number }
 > = {
-  pc: { screenOffset: [0.026, 0.186, 0.007], camDist: 1.3 },
+  pc: { screenOffset: [0.026, 0.186, 0.007], camDist: 1 },
 };
 
 const DEFAULT_TARGET: [number, number, number] = [0.25, 0.5, 0];
@@ -108,7 +108,7 @@ const ZOOMED_CLAMPS = { minDistance: 0.5, maxDistance: 2.5, maxPolarAngle: Math.
 // these world bounds projected to the screen, so it overlays the actual glass.
 const GLASS_BOUNDS = {
   min: { x: 0.016268, y: -0.033843, z: -0.35829 },
-  max: { x: 0.036268, y: 0.406157, z: 0.37171 },
+  max: { x: 0.036268, y: 0.446157, z: 0.43671 },
 };
 const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
 const ARRIVE_EPS = 0.005;
@@ -118,9 +118,8 @@ interface DesktopSceneProps {
   onOpenModal: (id: string) => void;
   /** "pc" while the showcase zoom is active; null in the idle desk view. */
   zoomTarget: string | null;
-  caseStudies: ContentItem[];
+  projects: ContentItem[];
   showcaseContent?: ContentItem;
-  onOpenCaseStudy: (id: string) => void;
   onCloseShowcase: () => void;
 }
 
@@ -273,9 +272,8 @@ function CameraRig({
 export function DesktopScene({
   onOpenModal,
   zoomTarget,
-  caseStudies,
+  projects,
   showcaseContent,
-  onOpenCaseStudy,
   onCloseShowcase,
 }: DesktopSceneProps) {
   const [zoomed, setZoomed] = useState(false);
@@ -300,7 +298,7 @@ export function DesktopScene({
 
   return (
     <div aria-hidden className="fixed inset-0 z-[-1]">
-      <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 30 }}>
+      <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}>
         {/* ── Ambient: neutral base so every material reads true ── */}
         <ambientLight intensity={0.22} color="#e6ecf4" />
         {/* ── Hemisphere: cool sky above + warm bounce below — lifts the tops of
@@ -351,8 +349,7 @@ export function DesktopScene({
             widthPx={screenSize.w}
             heightPx={screenSize.h}
             content={showcaseContent}
-            caseStudies={caseStudies}
-            onOpen={onOpenCaseStudy}
+            projects={projects}
             onClose={onCloseShowcase}
           />
         )}

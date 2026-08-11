@@ -6,6 +6,7 @@ import { StandardView } from "@/components/StandardView";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Modal } from "@/components/Modal";
 import { ModalContent } from "@/components/ModalContent";
+import { ProjectModalContent } from "@/components/ProjectModalContent";
 import { AboutModalContent } from "@/components/AboutModalContent";
 import { StackModalContent } from "@/components/StackModalContent";
 import { ContactModalContent } from "@/components/ContactModalContent";
@@ -25,9 +26,6 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // the user's choice after a manual toggle; resizing never auto-flips back.
   const [standardOverride, setStandardOverride] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  // Non-null while inside a Showcase -> case study drill-down; closing the
-  // study restores the Showcase modal instead of clearing.
-  const [returnTo, setReturnTo] = useState<string | null>(null);
   // "pc" while the showcase is shown on the monitor (3D zoom); null when the
   // showcase is closed and the camera returns to the desk. The PC model and the
   // HUD showcase button both set this instead of opening a dialog.
@@ -51,16 +49,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     // dangles when the user toggles back to HUD.
     setZoomTarget(null);
     setActiveModal(null);
-    setReturnTo(null);
   };
-  const closeModal = () => {
-    setActiveModal(returnTo);
-    setReturnTo(null);
-  };
-  const openFromShowcase = (id: string) => {
-    setReturnTo("showcase");
-    setActiveModal(id);
-  };
+  const closeModal = () => setActiveModal(null);
   // The showcase lives on the PC monitor (3D zoom) in HUD mode; anywhere else
   // it falls back to a normal dialog.
   const openContent = (id: string) => {
@@ -108,6 +98,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
         );
       case "contact":
         return <ContactModalContent content={content} onClose={onClose} />;
+      case "project":
+        return <ProjectModalContent content={content} onClose={onClose} />;
       default:
         return <ModalContent content={content} onClose={onClose} />;
     }
@@ -129,9 +121,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
           <DesktopScene
             onOpenModal={openContent}
             zoomTarget={zoomTarget}
-            caseStudies={portfolio.caseStudies}
+            projects={portfolio.projects}
             showcaseContent={portfolio.items.showcase}
-            onOpenCaseStudy={openFromShowcase}
             onCloseShowcase={closeShowcase}
           />
           <HUD
@@ -139,6 +130,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             navItems={portfolio.siteConfig.navItems}
             onToggleStandard={toggleView}
             onOpen={openContent}
+            zoomed={zoomTarget != null}
           />
         </>
       ) : (

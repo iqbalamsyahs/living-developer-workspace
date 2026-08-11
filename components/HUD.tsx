@@ -15,6 +15,8 @@ interface HUDProps {
   navItems: { id: string; label: string }[];
   onToggleStandard: () => void;
   onOpen: (id: string) => void;
+  /** True while the showcase is zoomed on the monitor; hides the orbit hint. */
+  zoomed: boolean;
 }
 
 /** Icon per content id; anything unknown falls back to a generic square. */
@@ -33,7 +35,7 @@ const FALLBACK_ICON = DesktopIcon;
  * below this in the future). The root is pointer-events-none so the canvas
  * underneath stays interactive; only the controls opt back in.
  */
-export function HUD({ brand, navItems, onToggleStandard, onOpen }: HUDProps) {
+export function HUD({ brand, navItems, onToggleStandard, onOpen, zoomed }: HUDProps) {
   return (
     <div className="pointer-events-none fixed inset-0 z-10">
       {/* Top-left name mark */}
@@ -54,10 +56,12 @@ export function HUD({ brand, navItems, onToggleStandard, onOpen }: HUDProps) {
         </Button>
       </div>
 
-      {/* Bottom-center hint */}
-      <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center font-mono text-xs text-text-secondary">
-        Drag to rotate · Click glowing objects to inspect
-      </p>
+      {/* Bottom-center hint (hidden while zoomed into the PC) */}
+      {!zoomed && (
+        <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center font-mono text-xs text-text-secondary">
+          Drag to rotate · Click glowing objects to inspect
+        </p>
+      )}
 
       {/* Right-edge floating actions */}
       <div
