@@ -77,7 +77,7 @@ export function HUD({ brand, navItems, onToggleStandard, onOpen, zoomed }: HUDPr
               type="button"
               aria-label={item.label}
               onClick={() => onOpen(item.id)}
-              className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-[1px]"
+              className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
             >
               <Icon width={18} height={18} aria-hidden="true" />
             </button>
