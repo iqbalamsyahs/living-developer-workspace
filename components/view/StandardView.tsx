@@ -48,7 +48,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
   const contact = portfolio.items.contact;
 
   return (
-    <main className="mx-auto min-h-[100dvh] w-full max-w-3xl px-6 py-16">
+    <main className="mx-auto min-h-dvh w-full max-w-3xl px-6 py-16">
       {onToggleHUD && (
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={onToggleHUD}>
@@ -232,7 +232,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
                 type="button"
                 onClick={() => onOpen(entry.id)}
                 aria-label={`Open journal entry: ${entry.title}`}
-                className="group rounded-md border border-secondary/20 bg-surface p-6 text-left transition-colors hover:border-secondary/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="group rounded-md border border-secondary/20 bg-surface p-6 text-left transition-colors hover:border-secondary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 <h3 className="font-display text-lg text-text-primary group-hover:text-secondary">
                   {entry.title}
@@ -272,26 +272,17 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
             >
               {siteConfig.ctas.email}
             </a>
-            {contact.contact?.github && (
+            {contact.contact?.socials?.map((s) => (
               <a
-                href={contact.contact.github}
+                key={s._key ?? s.platform}
+                href={s.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-sm px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+                className="rounded-sm px-5 py-2.5 text-sm font-medium capitalize text-text-secondary transition-colors hover:text-text-primary"
               >
-                GitHub
+                {s.platform}
               </a>
-            )}
-            {contact.contact?.linkedin && (
-              <a
-                href={contact.contact.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-sm px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
-              >
-                LinkedIn
-              </a>
-            )}
+            ))}
           </div>
         </div>
       </section>

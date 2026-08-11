@@ -30,11 +30,17 @@ export interface Service {
   description: string;
 }
 
+export interface SocialItem {
+  /** Sanity array key; used as the React key when present. */
+  _key?: string;
+  platform: string;
+  url: string;
+}
+
 export interface Contact {
   email: string;
   blurb?: string;
-  linkedin?: string;
-  github?: string;
+  socials?: SocialItem[];
 }
 
 /** Raw Sanity shape of an image reference (before urlFor). */

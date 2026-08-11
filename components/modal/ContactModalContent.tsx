@@ -60,28 +60,21 @@ export function ContactModalContent({ content, onClose }: ContactModalContentPro
               {copied ? "Email copied to clipboard" : ""}
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2">
-              {contact.github && (
-                <a
-                  href={contact.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  GitHub
-                </a>
-              )}
-              {contact.linkedin && (
-                <a
-                  href={contact.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  LinkedIn
-                </a>
-              )}
-            </div>
+            {contact.socials && contact.socials.length > 0 && (
+              <div className="flex flex-wrap gap-4 pt-2">
+                {contact.socials.map((s) => (
+                  <a
+                    key={s._key ?? s.platform}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium capitalize text-primary underline-offset-4 hover:underline"
+                  >
+                    {s.platform}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
