@@ -1,11 +1,11 @@
 import {defineArrayMember, defineField, defineType} from 'sanity'
-import {DocumentTextIcon} from '@sanity/icons/DocumentText'
+import {DocumentsIcon} from '@sanity/icons/Documents'
 
-export const projectCaseStudy = defineType({
-  name: 'projectCaseStudy',
-  title: 'Project Case Study',
+export const project = defineType({
+  name: 'project',
+  title: 'Project',
   type: 'document',
-  icon: DocumentTextIcon,
+  icon: DocumentsIcon,
   fields: [
     defineField({
       name: 'title',
@@ -27,6 +27,47 @@ export const projectCaseStudy = defineType({
       options: {source: 'title'},
     }),
     defineField({
+      name: 'coverImage',
+      title: 'Cover Image',
+      description: 'Screenshot shown on the showcase card. Upload the app/landing page.',
+      type: 'image',
+      options: {hotspot: true},
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Alt text',
+          type: 'string',
+          validation: (rule) => rule.required(),
+        }),
+      ],
+    }),
+    defineField({
+      name: 'gallery',
+      title: 'Gallery',
+      description: 'Additional screenshots shown in the project detail.',
+      type: 'array',
+      of: [
+        defineArrayMember({
+          type: 'image',
+          options: {hotspot: true},
+          fields: [
+            defineField({
+              name: 'alt',
+              title: 'Alt text',
+              type: 'string',
+              validation: (rule) => rule.required(),
+            }),
+          ],
+        }),
+      ],
+    }),
+    defineField({
+      name: 'role',
+      title: 'Role',
+      description: 'Your role on the project, e.g. "Frontend Developer".',
+      type: 'string',
+    }),
+    defineField({
       name: 'summary',
       title: 'Summary',
       description: 'One-to-two-line teaser shown on cards.',
@@ -36,6 +77,22 @@ export const projectCaseStudy = defineType({
     defineField({
       name: 'techStack',
       title: 'Tech Stack',
+      type: 'array',
+      of: [defineArrayMember({type: 'string'})],
+      validation: (rule) => rule.unique(),
+    }),
+    defineField({
+      name: 'highlights',
+      title: 'Highlights',
+      description: 'Key contributions / features you built.',
+      type: 'array',
+      of: [defineArrayMember({type: 'string'})],
+      validation: (rule) => rule.unique(),
+    }),
+    defineField({
+      name: 'outcomes',
+      title: 'Outcomes',
+      description: 'Results / impact, e.g. "40% faster page loads".',
       type: 'array',
       of: [defineArrayMember({type: 'string'})],
       validation: (rule) => rule.unique(),
@@ -74,6 +131,6 @@ export const projectCaseStudy = defineType({
     }),
   ],
   preview: {
-    select: {title: 'title'},
+    select: {title: 'title', subtitle: 'date'},
   },
 })

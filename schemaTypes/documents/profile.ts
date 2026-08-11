@@ -199,9 +199,9 @@ export const profile = defineType({
           title: 'CTA Labels',
           type: 'object',
           fields: [
-            defineField({name: 'caseStudy', title: 'Read a Case Study', type: 'string'}),
+            defineField({name: 'caseStudy', title: 'View Project', type: 'string'}),
             defineField({name: 'resume', title: 'View Resume', type: 'string'}),
-            defineField({name: 'readCaseStudy', title: 'Read Case Study (card)', type: 'string'}),
+            defineField({name: 'readCaseStudy', title: 'View Project (card)', type: 'string'}),
             defineField({name: 'email', title: 'Email Me', type: 'string'}),
           ],
         }),
