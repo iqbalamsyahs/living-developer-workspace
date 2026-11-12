@@ -61,7 +61,7 @@ const ICONS: Record<string, typeof DesktopIcon> = {
 const FALLBACK_ICON = DesktopIcon;
 
 /**
- * Desktop HUD overlaying the 3D canvas (z-10; canvas renders at z-[-1]
+ * Desktop HUD overlaying the 3D canvas (z-10; canvas renders at z-0
  * below this in the future). The root is pointer-events-none so the canvas
  * underneath stays interactive; only the controls opt back in.
  */

@@ -47,7 +47,7 @@ Traditional developer portfolios rely on static lists and grids that tell visito
 
 **6.1. The 3D Scene (Desktop)**
 *   Must use React Three Fiber (`@react-three/fiber`) and Drei (`@react-three/drei`).
-*   Camera must be locked in an orthographic projection to force the isometric perspective.
+*   Camera is a perspective camera (fov 35) that flies between scroll stops (intro, about, stack, experience, projects, journal, contact) over a desk set; free rotation is limited around the overview pose and springs back. (Supersedes the earlier orthographic-isometric requirement.)
 *   Hover states must be obvious (e.g., cursor changes to pointer, object scales up 1.05x, or emits an outline).
 *   Must include a global UI overlay (HTML outside the canvas) with a clear "View Standard Layout / Resume" toggle.
 

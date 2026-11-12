@@ -273,7 +273,7 @@ function CameraRig({
 }
 
 /**
- * "Midnight Engineering" 3D desktop. Renders at z-[-1] behind the HUD overlay
+ * "Midnight Engineering" 3D desktop. Renders at z-0 behind the HUD overlay
  * (z-10); the wrapper is aria-hidden since interactive content lives in HUD/Modal.
  */
 export function DesktopScene({

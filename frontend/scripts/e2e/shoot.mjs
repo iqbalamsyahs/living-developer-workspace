@@ -1,5 +1,5 @@
 // Headless-Chrome driver over CDP (no dependencies; Node's global WebSocket).
-// Usage: node scripts/e2e/shoot.mjs <outDir> [--w 1440] [--h 900] [--reduced-motion] [--url http://localhost:3000/] <step>...
+// Usage: node scripts/e2e/shoot.mjs <outDir> [--w 1440] [--h 900] [--reduced-motion] [--no-webgl] [--url http://localhost:3000/] <step>...
 // Step: `action[:arg]` or `name:action[:arg]`. Actions:
 //   wait:<ms>  scroll:<px> (window.scrollTo)  wheel:<px> (real wheel event)
 //   click:<x>,<y>  drag:<x1>,<y1>,<x2>,<y2> (stays pressed until `release`)  release  key:<Key>  eval:<js>  log  shot (writes <outDir>/<name>.png)
@@ -8,13 +8,14 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const argv = process.argv.slice(2);
-const opt = { w: 1440, h: 900, reduced: false, url: "http://localhost:3000/" };
+const opt = { w: 1440, h: 900, reduced: false, noWebgl: false, url: "http://localhost:3000/" };
 const positional = [];
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === "--w") opt.w = +argv[++i];
   else if (argv[i] === "--h") opt.h = +argv[++i];
   else if (argv[i] === "--url") opt.url = argv[++i];
   else if (argv[i] === "--reduced-motion") opt.reduced = true;
+  else if (argv[i] === "--no-webgl") opt.noWebgl = true;
   else positional.push(argv[i]);
 }
 const [outDir, ...steps] = positional;
@@ -57,6 +58,7 @@ try {
   await send("Network.setCacheDisabled", { cacheDisabled: true });
   await send("Emulation.setDeviceMetricsOverride", { width: opt.w, height: opt.h, deviceScaleFactor: 1, mobile: opt.w < 500 });
   if (opt.reduced) await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  if (opt.noWebgl) await send("Page.addScriptToEvaluateOnNewDocument", { source: "HTMLCanvasElement.prototype.getContext = () => null;" });
   await send("Page.navigate", { url: opt.url });
 
   for (const step of steps) {

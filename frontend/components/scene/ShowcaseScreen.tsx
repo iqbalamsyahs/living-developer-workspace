@@ -29,7 +29,7 @@ interface ShowcaseScreenProps {
  * page — a browser-like page transition, no modal. "← Back to Projects"
  * slides back. Inside a drei <Html> anchor; the native <dialog> is
  * intentionally bypassed so the grid lives in the scene.
- * portal={getOverlayRoot()} lifts it out of the z-[-1] canvas wrapper; the
+ * portal={getOverlayRoot()} lifts it out of the aria-hidden canvas wrapper; the
  * zIndexRange keeps it above the HUD (z-10) but below any open <dialog>.
  *
  * The projected glass bounds include bezels and model padding, so the panel is
