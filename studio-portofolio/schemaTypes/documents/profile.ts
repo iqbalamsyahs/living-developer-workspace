@@ -21,6 +21,62 @@ export const profile = defineType({
       rows: 3,
     }),
     defineField({
+      name: 'photo',
+      title: 'Photo',
+      type: 'image',
+      options: {hotspot: true},
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Alt text',
+          type: 'string',
+          validation: (rule) => rule.required(),
+        }),
+      ],
+    }),
+    defineField({
+      name: 'availability',
+      title: 'Availability',
+      type: 'object',
+      initialValue: {isAvailable: true, statusText: 'Available for work', timezone: 'Asia/Jakarta'},
+      fields: [
+        defineField({name: 'isAvailable', title: 'Available for work', type: 'boolean'}),
+        defineField({name: 'statusText', title: 'Status text', type: 'string'}),
+        defineField({
+          name: 'timezone',
+          title: 'Timezone',
+          description: 'IANA name, e.g. Asia/Jakarta.',
+          type: 'string',
+        }),
+      ],
+    }),
+    defineField({
+      name: 'faq',
+      title: 'FAQ',
+      type: 'array',
+      of: [
+        defineArrayMember({
+          name: 'faqItem',
+          title: 'Question',
+          type: 'object',
+          fields: [
+            defineField({
+              name: 'question',
+              title: 'Question',
+              type: 'string',
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: 'answer',
+              title: 'Answer',
+              type: 'text',
+              validation: (rule) => rule.required(),
+            }),
+          ],
+        }),
+      ],
+    }),
+    defineField({
       name: 'resume',
       title: 'Resume',
       type: 'object',
@@ -30,6 +86,12 @@ export const profile = defineType({
           title: 'Headline',
           type: 'array',
           of: [defineArrayMember({type: 'block'})],
+        }),
+        defineField({
+          name: 'file',
+          title: 'Resume file (PDF)',
+          type: 'file',
+          options: {accept: 'application/pdf'},
         }),
         defineField({
           name: 'links',
@@ -103,6 +165,7 @@ export const profile = defineType({
                   {title: 'Language', value: 'language'},
                   {title: 'Tool', value: 'tool'},
                   {title: 'Cloud', value: 'cloud'},
+                  {title: 'Database', value: 'database'},
                 ],
                 layout: 'radio',
               },
@@ -147,6 +210,13 @@ export const profile = defineType({
           title: 'Email',
           type: 'string',
           validation: (rule) => rule.email().required(),
+        }),
+        defineField({
+          name: 'bookingUrl',
+          title: 'Booking URL',
+          description: 'Optional scheduling link. When empty, "Hire me" opens an email instead.',
+          type: 'url',
+          validation: (rule) => rule.uri({scheme: ['https']}),
         }),
         defineField({
           name: 'blurb',
@@ -232,6 +302,7 @@ export const profile = defineType({
             defineField({name: 'language', title: 'Language', type: 'string'}),
             defineField({name: 'tool', title: 'Tool', type: 'string'}),
             defineField({name: 'cloud', title: 'Cloud', type: 'string'}),
+            defineField({name: 'database', title: 'Database', type: 'string'}),
           ],
         }),
         defineField({
