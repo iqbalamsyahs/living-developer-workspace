@@ -10,9 +10,16 @@ import { ProjectModalContent } from "@/components/modal/ProjectModalContent";
 import { AboutModalContent } from "@/components/modal/AboutModalContent";
 import { StackModalContent } from "@/components/modal/StackModalContent";
 import { ContactModalContent } from "@/components/modal/ContactModalContent";
-import { DesktopScene } from "@/components/scene/DesktopScene";
+import dynamic from "next/dynamic";
+import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import type { ContentItem, PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+
+// ssr:false + dynamic keeps three.js and every .glb out of the mobile bundle and the server render.
+const DesktopScene = dynamic(
+  () => import("@/components/scene/DesktopScene").then((m) => m.DesktopScene),
+  { ssr: false },
+);
 
 // z-scale: 3D canvas -1 | HUD overlay 10 | modal dialog top-layer.
 
@@ -27,6 +34,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // Auto view: HUD on desktop, Standard View on mobile. The override locks
   // the user's choice after a manual toggle; resizing never auto-flips back.
   const [standardOverride, setStandardOverride] = useState(false);
+  const [sceneFailed, setSceneFailed] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   // "pc" while the showcase is shown on the monitor (3D zoom); null when the
   // showcase is closed and the camera returns to the desk. The PC model and the
@@ -49,6 +57,12 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     setStandardOverride((overridden) => !overridden);
     // Standard View unmounts the 3D scene; drop any zoom/modal so no state
     // dangles when the user toggles back to HUD.
+    setZoomTarget(null);
+    setActiveModal(null);
+  };
+  const handleSceneFailure = () => {
+    setSceneFailed(true);
+    setStandardOverride(true);
     setZoomTarget(null);
     setActiveModal(null);
   };
@@ -148,7 +162,9 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             className="pointer-events-none"
             style={{ height: `${SPIKE_STAGES.length * 100}vh` }}
           />
+          <SceneBoundary onError={handleSceneFailure}>
           <DesktopScene
+            onContextLost={handleSceneFailure}
             onOpenModal={openContent}
             zoomTarget={zoomTarget}
             projects={portfolio.projects}
@@ -157,6 +173,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             aboutContent={portfolio.items.about}
             onCloseShowcase={closeShowcase}
           />
+          </SceneBoundary>
           <HUD
             brand={portfolio.siteConfig.brand}
             navItems={portfolio.siteConfig.navItems}
@@ -171,6 +188,15 @@ export function HomeClient({ portfolio }: HomeClientProps) {
           onToggleHUD={isDesktop ? toggleView : undefined}
           onOpen={openContent}
         />
+      )}
+
+      {sceneFailed && (
+        <p
+          role="status"
+          className="fixed bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-md border border-white/10 bg-slate-900/90 px-4 py-2 text-sm text-slate-200"
+        >
+          The 3D scene could not load, so you are seeing the standard view.
+        </p>
       )}
 
       {activeContent && !showcaseOnScreen && (

@@ -25,6 +25,8 @@ const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
 const ARRIVE_EPS = 0.005;
 
 interface DesktopSceneProps {
+  /** Called when the WebGL context is lost so the page can fall back to Standard View. */
+  onContextLost?: () => void;
   /** Objects other than the PC (notebook/whiteboard/phone) open modals directly. */
   onOpenModal: (id: string) => void;
   /** "pc" while the showcase zoom is active; null in the idle desk view. */
@@ -225,6 +227,7 @@ export function DesktopScene({
   contactContent,
   aboutContent,
   onCloseShowcase,
+  onContextLost,
 }: DesktopSceneProps) {
   const [zoomed, setZoomed] = useState(false);
   // Pixel size of the showcase panel, reported by GlassProjector (inside the
@@ -253,7 +256,9 @@ export function DesktopScene({
 
   return (
     <div aria-hidden className="fixed inset-0 z-[-1]">
-      <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}>
+      <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}
+        onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", () => onContextLost?.())}
+      >
         {/* ── Ambient: neutral base so every material reads true ── */}
         <ambientLight intensity={0.22} color="#e6ecf4" />
         {/* ── Hemisphere: cool sky above + warm bounce below — lifts the tops of
