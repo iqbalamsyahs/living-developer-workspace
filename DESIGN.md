@@ -6,7 +6,7 @@
 3. **Familiarity Breeds Intuition:** Interaction models should mirror tools your audience (engineering managers, developers) already uses. Modals should feel like IDE panels; typography should echo code editors; navigation should feel like terminal commands.
 
 ## 2. Visual Direction
-* **Mood:** "Midnight Engineering." Think of a developer's desk at 1 AM. Focused, dimly lit, glowing screens, and highly organized. It should feel calm but highly technical.
+* **Mood:** "Warm Night Bedroom." Think of a cozy bedroom desk setup at night. Dark room, a desk lamp's warm pool of light, monitor glow, cozy and lived-in, low-poly. It should feel calm and personal, not clinical.
 * **References:** High-end dark mode interfaces (like Linear or Vercel's dashboard), minimalist isometric pixel art, and VS Code syntax highlighting themes.
 * **What to Avoid:** Corporate SaaS aesthetics (flat blue and white), overly playful or bouncy UI (no cartoonish physics), and cluttered "maximalist" designs. The 3D objects should be low-poly or stylized, not hyper-realistic, to avoid the "uncanny valley" and keep render times low.
 
@@ -14,12 +14,15 @@
 The design system leans into a dark-mode-first approach, using an 8pt grid system that maps perfectly to Tailwind CSS utility classes.
 
 ### Color Palette
-* **Base/Background:** `#0F172A` (Slate 900). A deep, rich navy—easier on the eyes than pure black, reminiscent of modern code editors.
-* **Surface:** `#1E293B` (Slate 800). Used for modals and cards resting on the base background.
-* **Primary Accent:** `#10B981` (Emerald 500). A "terminal green" used sparingly for interactive elements, hover states on 3D objects, and success markers.
-* **Secondary Accent:** `#8B5CF6` (Violet 500). Used for highlighting distinct data types, like syntax highlighting (e.g., separating technical skills from personal journals).
-* **Text Primary:** `#F8FAFC` (Slate 50). High contrast for readability on dark surfaces.
-* **Text Secondary:** `#94A3B8` (Slate 400). For metadata, dates, and subtle UI hints.
+* **Base/Background (`background`):** `#0F0D17`. A deep, warm near-black for the night room backdrop.
+* **Surface (`surface`):** `#1A1626`. Used for modals and cards resting on the base background.
+* **Line (`line`):** `#2C2540`. Hairline borders and dividers on dark surfaces.
+* **Primary Accent (`primary`):** `#FFB86B`. A warm desk-lamp amber used for interactive elements, hover states on 3D objects, and success markers.
+* **Primary Ink (`primary-ink`):** `#3A2008`. Dark brown text/icon color for use on top of the primary accent.
+* **Secondary Accent (`secondary`):** `#B39DDB`. A soft purple used for highlighting distinct data types, like syntax highlighting (e.g., separating technical skills from personal journals).
+* **Secondary Ink (`secondary-ink`):** `#2A1840`. Dark purple text/icon color for use on top of the secondary accent.
+* **Text Primary (`text-primary`):** `#F3ECE4`. High contrast for readability on dark surfaces.
+* **Text Secondary (`text-secondary`):** `#A99FB5`. For metadata, dates, and subtle UI hints.
 
 ### Type Scale
 * **Display / UI Overlay:** *Space Grotesk*. A geometric sans-serif that feels slightly mechanical and tech-forward. Used for the HUD (Heads Up Display) elements overlaying the 3D canvas.
@@ -33,7 +36,7 @@ The design system leans into a dark-mode-first approach, using an 8pt grid syste
 
 ### Shadows
 Instead of standard drop shadows, we use **glows** (colored box-shadows) to represent screens and active objects in the dark scene.
-* *Modal Glow:* `0 20px 40px -10px rgba(15, 23, 42, 0.8), 0 0 0 1px rgba(16, 185, 129, 0.2)`
+* *Modal Glow:* `0 20px 40px -10px rgba(15, 13, 23, 0.8), 0 0 0 1px rgba(255, 184, 107, 0.2)`
 
 ## 4. Screen Inventory
 1. **Boot Sequence (Loading Screen):** A stylized terminal-like loading screen while `.gltf` assets parse. *Justification:* Prevents staring at a blank canvas and sets the technical tone immediately.

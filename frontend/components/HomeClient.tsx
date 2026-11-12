@@ -182,7 +182,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
       {sceneFailed && !showHUD && (
         <p
           role="status"
-          className="fixed bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-md border border-white/10 bg-slate-900/90 px-4 py-2 text-sm text-slate-200"
+          className="fixed bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-md border border-line bg-surface/90 px-4 py-2 text-sm text-text-primary"
         >
           The 3D scene could not load, so you are seeing the standard view.
         </p>

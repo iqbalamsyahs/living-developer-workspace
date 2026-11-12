@@ -11,7 +11,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 /**
  * Shared button. Shape lock: interactive elements are `rounded-sm` (6px) per
  * DESIGN.md. Solid variants use dark ink on the accent color so the label
- * clears WCAG AA (white on #10b981 and #8b5cf6 both fail).
+ * clears WCAG AA (white on #ffb86b and #b39ddb both fail).
  */
 export function Button({
   variant = "primary",
