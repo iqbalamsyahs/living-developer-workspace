@@ -45,12 +45,15 @@ function RoomObject({
   id,
   label,
   clickable,
+  showLabel,
   geometry,
   onSelect,
 }: {
   id: RoomId;
   label: string;
   clickable: boolean;
+  /** False while a panel is open: the camera is framed on an object and the label would sit over it. */
+  showLabel: boolean;
   geometry: BoxGeometry;
   onSelect: (id: RoomId) => void;
 }) {
@@ -62,10 +65,30 @@ function RoomObject({
     return [(lo(0) + hi(0)) / 2, hi(1) + 0.35, (lo(2) + hi(2)) / 2];
   }, [boxes]);
 
+  // Drop hover state without waiting for a pointer move (after a click, or when the object stops being clickable).
+  const clearHover = () => {
+    interactiveHovered = false;
+    document.body.style.cursor = "";
+    setHovered(false);
+  };
+  // Lost clickability while hovered: no pointerout will come, so release the cursor here. `lit` already
+  // drops the glow/label; the stale flag is reset when the object becomes clickable again.
+  useEffect(() => {
+    if (clickable || !hovered) return;
+    interactiveHovered = false;
+    document.body.style.cursor = "";
+  }, [clickable, hovered]);
+  const [wasClickable, setWasClickable] = useState(clickable);
+  if (clickable !== wasClickable) {
+    setWasClickable(clickable);
+    if (clickable) setHovered(false);
+  }
+
   const handlers = clickable
     ? {
         onClick: (e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
+          clearHover();
           onSelect(id);
         },
         onPointerOver: (e: ThreeEvent<PointerEvent>) => {
@@ -89,7 +112,7 @@ function RoomObject({
   return (
     <group {...handlers}>
       <Boxes boxes={boxes} geometry={geometry} hovered={lit} />
-      {lit && (
+      {lit && showLabel && (
         <Html position={labelAt} center pointerEvents="none" zIndexRange={[5, 0]}>
           <span className="pointer-events-none whitespace-nowrap rounded-sm border border-line bg-surface/90 px-2 py-1 font-mono text-xs text-text-primary">
             {label}
@@ -223,12 +246,13 @@ export function DesktopScene({
             id={id}
             label={labels[id]}
             clickable={active.includes(id)}
+            showLabel={focus === null}
             geometry={geometry}
             onSelect={onSelect}
           />
         ))}
 
-        <ContactShadows position={[3, 0.002, 3]} opacity={0.6} scale={6} blur={2.2} far={2.5} resolution={512} color="#0f0d17" />
+        <ContactShadows position={[3, 0.002, 3]} opacity={0.6} scale={6} blur={2.2} far={2.5} resolution={512} frames={1} color="#0f0d17" />
 
         <CameraRig focus={focus} reducedMotion={reducedMotion} />
 

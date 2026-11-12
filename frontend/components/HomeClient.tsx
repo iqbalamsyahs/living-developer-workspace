@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { HUD } from "@/components/view/HUD";
+import { RoomPanel } from "@/components/view/RoomPanel";
+import { IntroCard } from "@/components/view/IntroCard";
 import { StandardView } from "@/components/view/StandardView";
 import { SplashScreen } from "@/components/view/SplashScreen";
 import { Modal } from "@/components/ui/Modal";
@@ -25,7 +27,7 @@ const DesktopScene = dynamic(
   { ssr: false },
 );
 
-// z-scale: 3D canvas -1 | HUD overlay 10 | modal dialog top-layer.
+// z-scale: 3D canvas 0 | HUD overlay + room panel 10 | modal dialog top-layer.
 
 interface HomeClientProps {
   portfolio: PortfolioData;
@@ -55,11 +57,13 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   const showHUD = isDesktop && !standardOverride && webgl === true;
   const [focus, setFocus] = useState<RoomId | null>(null);
   const active = useMemo(() => activeRoomIds(portfolio), [portfolio]);
+  const nav = useMemo(() => active.map((id) => ({ id, label: ROOM_LABELS[id] })), [active]);
   const reducedMotion = useReducedMotion();
 
   const toggleView = () => {
     setStandardOverride((overridden) => !overridden);
     setActiveModal(null);
+    setFocus(null);
   };
   const handleSceneFailure = () => {
     setSceneFailed(true);
@@ -67,16 +71,24 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     setActiveModal(null);
     setFocus(null);
   };
-  const closeModal = () => {
-    setActiveModal(null);
+  const closeModal = () => setActiveModal(null);
+  const closePanel = useCallback(() => {
     setFocus(null);
-  };
-  // ponytail: interim until the Task 4 side panel; each room object opens its existing modal.
-  const selectRoom = (id: RoomId) => {
-    const item = id === "experience" ? "about" : id === "journal" ? portfolio.journalEntries[0]?.id : id;
-    setFocus(id);
-    if (item) setActiveModal(item);
-  };
+    // Next frame: below lg the nav is hidden until the panel is gone.
+    if (focus) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-room="${focus}"]`)?.focus());
+  }, [focus]);
+  useEffect(() => {
+    if (focus == null || activeModal != null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closePanel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focus, activeModal, closePanel]);
+  const resume = resumeHref({
+    resumeFileUrl: portfolio.profile.resumeFileUrl,
+    links: portfolio.items.resume?.links,
+  });
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
 
@@ -128,37 +140,40 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             active={active}
             labels={ROOM_LABELS}
             focus={focus}
-            onSelect={selectRoom}
-            onBackgroundClick={() => setFocus(null)}
+            onSelect={setFocus}
+            onBackgroundClick={closePanel}
             onContextLost={handleSceneFailure}
             reducedMotion={reducedMotion}
           />
           </SceneBoundary>
           <HUD
             brand={portfolio.siteConfig.brand}
-            navItems={portfolio.siteConfig.navItems}
+            nav={nav}
+            panelOpen={focus != null}
+            openId={focus}
             onToggleStandard={toggleView}
-            onOpen={setActiveModal}
-            zoomed={focus != null}
-            onContact={() => setActiveModal("contact")}
-            journeyHint={false}
+            onOpen={setFocus}
             hireMeHref={hireMeHref(portfolio.profile.contact)}
-            resumeHref={resumeHref({
-              resumeFileUrl: portfolio.profile.resumeFileUrl,
-              links: portfolio.items.resume?.links,
-            })}
+            resumeHref={resume}
             availability={portfolio.profile.availability}
           />
+          {focus == null ? (
+            <IntroCard
+              name={portfolio.profile.name}
+              tagline={portfolio.siteConfig.heroTagline}
+              resumeHref={resume}
+              resumeLabel={portfolio.siteConfig.ctas.resume}
+            />
+          ) : (
+            <RoomPanel id={focus} portfolio={portfolio} onClose={closePanel} onOpenItem={setActiveModal} />
+          )}
         </>
       ) : (
         <StandardView
           portfolio={portfolio}
           onToggleHUD={isDesktop ? toggleView : undefined}
           onOpen={setActiveModal}
-          resumeHref={resumeHref({
-            resumeFileUrl: portfolio.profile.resumeFileUrl,
-            links: portfolio.items.resume?.links,
-          })}
+          resumeHref={resume}
         />
       )}
 

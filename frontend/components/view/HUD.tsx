@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import {
-  CodeIcon,
   DesktopIcon,
+  IdCardIcon,
   MobileIcon,
   PersonIcon,
   ReaderIcon,
@@ -13,18 +12,18 @@ import { Button } from "@/components/ui/Button";
 import { useLocalTime } from "@/hooks/useLocalTime";
 import { zoneLabel } from "@/lib/time";
 import type { Availability } from "@/lib/portfolio";
+import type { RoomId } from "@/lib/room";
 
 interface HUDProps {
   brand: string;
-  navItems: { id: string; label: string }[];
+  /** Active room objects, in nav order. */
+  nav: { id: RoomId; label: string }[];
+  /** True while the room panel is open; hides the hint and moves the side controls off it. */
+  panelOpen: boolean;
   onToggleStandard: () => void;
-  onOpen: (id: string) => void;
-  /** True while the showcase is zoomed on the monitor; hides the orbit hint. */
-  zoomed: boolean;
-  /** Scroll-journey mode: jump to the contact stop. */
-  onContact: () => void;
-  /** Scroll-journey mode: hint says scroll instead of drag. */
-  journeyHint: boolean;
+  onOpen: (id: RoomId) => void;
+  /** Room whose panel is open, for aria-pressed. */
+  openId?: RoomId | null;
   hireMeHref?: string;
   resumeHref?: string;
   availability?: Availability;
@@ -49,16 +48,17 @@ function AvailabilityBadge({ availability }: { availability: Availability }) {
   );
 }
 
-/** Icon per content id; anything unknown falls back to a generic square. */
-const ICONS: Record<string, typeof DesktopIcon> = {
+const ICONS: Record<RoomId, typeof DesktopIcon> = {
   showcase: DesktopIcon,
   about: PersonIcon,
   stack: StackIcon,
+  experience: IdCardIcon,
+  journal: ReaderIcon,
   contact: MobileIcon,
-  resume: CodeIcon,
-  "jrn-japanese": ReaderIcon,
 };
-const FALLBACK_ICON = DesktopIcon;
+
+/** RoomPanel is w-[min(28rem,50vw)]; while open, right-edge controls sit just left of it. */
+const LEFT_OF_PANEL = "right-[calc(min(28rem,50vw)+1.5rem)]";
 
 /**
  * Desktop HUD overlaying the 3D canvas (z-10; canvas renders at z-0
@@ -67,12 +67,11 @@ const FALLBACK_ICON = DesktopIcon;
  */
 export function HUD({
   brand,
-  navItems,
+  nav,
+  panelOpen,
   onToggleStandard,
   onOpen,
-  zoomed,
-  onContact,
-  journeyHint,
+  openId,
   hireMeHref,
   resumeHref,
   availability,
@@ -90,9 +89,9 @@ export function HUD({
         </span>
       </div>
 
-      {/* Top-right view toggle */}
-      <div className="pointer-events-auto absolute right-6 top-6 flex items-center gap-3">
-        {availability?.isAvailable && <AvailabilityBadge availability={availability} />}
+      {/* Top-right actions; shift left of the room panel so its close button stays clear */}
+      <div className={`pointer-events-auto absolute top-6 flex items-center gap-3 ${panelOpen ? LEFT_OF_PANEL : "right-6"}`}>
+        {availability?.isAvailable && !panelOpen && <AvailabilityBadge availability={availability} />}
         {resumeHref && (
           <a
             href={resumeHref}
@@ -103,9 +102,11 @@ export function HUD({
             Resume
           </a>
         )}
-        <Button variant="ghost" size="sm" onClick={onContact}>
-          Contact
-        </Button>
+        {nav.some((n) => n.id === "contact") && (
+          <Button variant="ghost" size="sm" onClick={() => onOpen("contact")}>
+            Contact
+          </Button>
+        )}
         {hireMeHref && (
           <a
             href={hireMeHref}
@@ -120,17 +121,10 @@ export function HUD({
         </Button>
       </div>
 
-      <Link
-        href="/credits"
-        className="pointer-events-auto absolute bottom-6 left-6 font-mono text-xs text-text-secondary hover:text-text-primary"
-      >
-        Credits
-      </Link>
 
-      {/* Bottom-center hint (hidden while zoomed into the PC) */}
-      {!zoomed && (
+      {!panelOpen && (
         <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center font-mono text-xs text-text-secondary">
-          {journeyHint ? "Scroll to explore · Click glowing objects" : "Drag to rotate · Click glowing objects to inspect"}
+          Drag to rotate · Scroll to zoom · Click an object to open it
         </p>
       )}
 
@@ -138,15 +132,17 @@ export function HUD({
       <div
         role="group"
         aria-label="Open content"
-        className="pointer-events-auto absolute right-6 top-1/2 flex -translate-y-1/2 flex-col gap-3"
+        className={`pointer-events-auto absolute top-1/2 flex -translate-y-1/2 flex-col gap-3 ${panelOpen ? `max-lg:hidden ${LEFT_OF_PANEL}` : "right-6"}`}
       >
-        {navItems.map((item) => {
-          const Icon = ICONS[item.id] ?? FALLBACK_ICON;
+        {nav.map((item) => {
+          const Icon = ICONS[item.id];
           return (
             <button
               key={item.id}
               type="button"
               aria-label={item.label}
+              aria-pressed={openId === item.id}
+              data-room={item.id}
               onClick={() => onOpen(item.id)}
               className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
             >
