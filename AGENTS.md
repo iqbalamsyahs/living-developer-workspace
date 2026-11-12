@@ -2,7 +2,7 @@
 
 ## 1. Project Context
 You are a Senior Frontend Architect and WebGL Expert. We are building a "Living Developer Workspace" — a hybrid interactive developer portfolio.
-- **Desktop Experience:** A 3D isometric interactive desk built with React Three Fiber.
+- **Desktop Experience:** A code-built 3D night bedroom, free-orbit, built with React Three Fiber.
 - **Mobile Experience:** A highly optimized, flat 2D fallback layout.
 - **Content Management:** 100% powered by a headless Sanity CMS via Incremental Static Regeneration (ISR).
 
@@ -31,8 +31,8 @@ Before making any major architectural decisions, always refer to the specific gu
 ## 5. 3D & WebGL Specifics (React Three Fiber)
 - **Performance First:** Optimize the 3D scene to maintain 60FPS.
 - Use `useMemo` for heavy calculations or geometry/material instancing.
-- Do not upload or fetch arbitrary `.gltf` files dynamically from the CMS. All 3D assets (`.gltf`, `.glb`) must reside in the `/public` directory and be pre-configured in the component tree.
-- Keep the camera orthographic to maintain the isometric aesthetic.
+- Do not upload or fetch arbitrary `.gltf` files dynamically from the CMS. All 3D is built from primitives in code, no model files.
+- Perspective camera (small fov) over a code-built bedroom; see PRD 6.1.
 
 ## 6. CMS & Data Fetching
 - Treat all data from Sanity as potentially nullable. Provide default values or fallback UI for missing data.

@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import type { RoomId } from "@/lib/room";
 
 /** Flat low-poly icons for each room object, in the scene's night-palette colors. */
-const ICONS: Record<RoomId, React.ReactNode> = {
+const ICONS: Record<RoomId, ReactNode> = {
   about: (
     <>
       <rect x="4" y="30" width="40" height="10" fill="#4a3a33" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { AboutModalContent } from "@/components/modal/AboutModalContent";
 import { ShowcaseModalContent } from "@/components/modal/ShowcaseModalContent";
 import { StackModalContent } from "@/components/modal/StackModalContent";
@@ -26,7 +26,7 @@ export function RoomPanel({ id, portfolio, onClose, onOpenItem }: RoomPanelProps
   }, [id]);
 
   const { items, projects, journalEntries, siteConfig } = portfolio;
-  let body: React.ReactNode;
+  let body: ReactNode;
   switch (id) {
     case "about":
       body = (
