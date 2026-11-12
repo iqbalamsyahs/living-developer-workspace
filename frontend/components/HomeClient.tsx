@@ -10,17 +10,16 @@ import { ProjectModalContent } from "@/components/modal/ProjectModalContent";
 import { AboutModalContent } from "@/components/modal/AboutModalContent";
 import { StackModalContent } from "@/components/modal/StackModalContent";
 import { ContactModalContent } from "@/components/modal/ContactModalContent";
+import { ShowcaseModalContent } from "@/components/modal/ShowcaseModalContent";
 import dynamic from "next/dynamic";
 import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWebGL } from "@/hooks/useWebGL";
-import { ProgressDots } from "@/components/journey/ProgressDots";
-import { StopOverlay } from "@/components/journey/StopOverlay";
-import { useJourney } from "@/hooks/useJourney";
-import { buildStops, stopIndexForContent } from "@/lib/journey";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { activeRoomIds, ROOM_LABELS, type RoomId } from "@/lib/room";
 
-// ssr:false + dynamic keeps three.js and every .glb out of the mobile bundle and the server render.
+// ssr:false + dynamic keeps three.js out of the mobile bundle and the server render.
 const DesktopScene = dynamic(
   () => import("@/components/scene/DesktopScene").then((m) => m.DesktopScene),
   { ssr: false },
@@ -54,11 +53,9 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   }, []);
 
   const showHUD = isDesktop && !standardOverride && webgl === true;
-  const stops = useMemo(() => buildStops(portfolio), [portfolio]);
-  const journalIds = useMemo(() => portfolio.journalEntries.map((j) => j.id), [portfolio.journalEntries]);
-  const journey = useJourney({ count: stops.length, enabled: showHUD, locked: activeModal != null });
-  // The active stop (driven only by scroll) decides where the camera is.
-  const zoomTarget = showHUD ? (stops[journey.activeIndex]?.zoomTarget ?? null) : null;
+  const [focus, setFocus] = useState<RoomId | null>(null);
+  const active = useMemo(() => activeRoomIds(portfolio), [portfolio]);
+  const reducedMotion = useReducedMotion();
 
   const toggleView = () => {
     setStandardOverride((overridden) => !overridden);
@@ -68,28 +65,18 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     setSceneFailed(true);
     setStandardOverride(true);
     setActiveModal(null);
+    setFocus(null);
   };
-  const closeModal = () => setActiveModal(null);
-  // HUD: objects and nav items scroll to their stop; anything without a stop (resume, journal
-  // entries, Standard View) opens the dialog.
-  const openContent = (id: string) => {
-    const index = stopIndexForContent(stops, id, journalIds);
-    if (showHUD && index >= 0) journey.goTo(index);
-    else setActiveModal(id);
+  const closeModal = () => {
+    setActiveModal(null);
+    setFocus(null);
   };
-  const closeShowcase = () => journey.goTo(0);
-  const contactIndex = stops.findIndex((s) => s.id === "contact");
-
-  // Esc backs out to the intro stop (a modal's own dialog handles its Escape).
-  const { activeIndex, goTo } = journey;
-  useEffect(() => {
-    if (!showHUD || activeModal != null || activeIndex === 0) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") goTo(0);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [showHUD, activeModal, activeIndex, goTo]);
+  // ponytail: interim until the Task 4 side panel; each room object opens its existing modal.
+  const selectRoom = (id: RoomId) => {
+    const item = id === "experience" ? "about" : id === "journal" ? portfolio.journalEntries[0]?.id : id;
+    setFocus(id);
+    if (item) setActiveModal(item);
+  };
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
 
@@ -107,6 +94,15 @@ export function HomeClient({ portfolio }: HomeClientProps) {
         );
       case "contact":
         return <ContactModalContent content={content} onClose={onClose} />;
+      case "showcase":
+        return (
+          <ShowcaseModalContent
+            content={content}
+            projects={portfolio.projects}
+            onOpen={setActiveModal}
+            onClose={onClose}
+          />
+        );
       case "project":
         return <ProjectModalContent content={content} onClose={onClose} />;
       default:
@@ -127,38 +123,25 @@ export function HomeClient({ portfolio }: HomeClientProps) {
 
       {showHUD ? (
         <>
-          <div
-            aria-hidden
-            className="pointer-events-none"
-            style={{ height: `${stops.length * 100}vh` }}
-          />
           <SceneBoundary onError={handleSceneFailure}>
           <DesktopScene
+            active={active}
+            labels={ROOM_LABELS}
+            focus={focus}
+            onSelect={selectRoom}
+            onBackgroundClick={() => setFocus(null)}
             onContextLost={handleSceneFailure}
-            reducedMotion={journey.reducedMotion}
-            onOpenModal={openContent}
-            zoomTarget={zoomTarget}
-            projects={portfolio.projects}
-            showcaseContent={portfolio.items.showcase}
-            contactContent={portfolio.items.contact}
-            aboutContent={portfolio.items.about}
-            stackContent={portfolio.items.stack}
-            categoryLabels={portfolio.siteConfig.categoryLabels}
-            onCloseShowcase={closeShowcase}
+            reducedMotion={reducedMotion}
           />
           </SceneBoundary>
-          {stops[journey.activeIndex] && (
-            <StopOverlay stop={stops[journey.activeIndex]} portfolio={portfolio} onOpen={setActiveModal} />
-          )}
-          <ProgressDots stops={stops} activeIndex={journey.activeIndex} onSelect={journey.goTo} />
           <HUD
             brand={portfolio.siteConfig.brand}
             navItems={portfolio.siteConfig.navItems}
             onToggleStandard={toggleView}
-            onOpen={openContent}
-            zoomed={zoomTarget != null}
-            onContact={() => journey.goTo(contactIndex)}
-            journeyHint
+            onOpen={setActiveModal}
+            zoomed={focus != null}
+            onContact={() => setActiveModal("contact")}
+            journeyHint={false}
             hireMeHref={hireMeHref(portfolio.profile.contact)}
             resumeHref={resumeHref({
               resumeFileUrl: portfolio.profile.resumeFileUrl,
@@ -171,7 +154,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
         <StandardView
           portfolio={portfolio}
           onToggleHUD={isDesktop ? toggleView : undefined}
-          onOpen={openContent}
+          onOpen={setActiveModal}
           resumeHref={resumeHref({
             resumeFileUrl: portfolio.profile.resumeFileUrl,
             links: portfolio.items.resume?.links,

@@ -42,8 +42,11 @@ export const DECOR: Box[] = [
   fromSketch(0.8, 0.2, 1, 2.8, 1.2, 0.12, "#a9744f"), // desk top
   fromSketch(0.8, 0.2, 0, 0.12, 1.2, 1, "#a9744f"), // desk leg (left)
   fromSketch(3.48, 0.2, 0, 0.12, 1.2, 1, "#a9744f"), // desk leg (right)
+  fromSketch(0.97, 0.47, 1.12, 0.2, 0.2, 0.04, "#2c2540"), // lamp base
+  fromSketch(1.05, 0.55, 1.16, 0.04, 0.04, 0.44, "#2c2540"), // lamp stem
   fromSketch(0.92, 0.42, 1.6, 0.3, 0.3, 0.12, "#ffcf7a", true), // lamp head
-  fromSketch(1.9, 1.7, 0, 0.8, 0.8, 0.55, "#3d4a66"), // chair
+  fromSketch(1.9, 1.7, 0, 0.8, 0.8, 0.55, "#3d4a66"), // chair seat
+  fromSketch(1.9, 2.38, 0.55, 0.8, 0.12, 0.75, "#3d4a66"), // chair backrest
   fromSketch(3.2, 2.6, 0, 2.2, 2.6, 0.03, "#7a5c8a"), // rug
   fromSketch(5.2, 5.1, 0.4, 0.6, 0.6, 0.25, "#6b4a3a"), // plant pot
   fromSketch(5.25, 5.15, 0.65, 0.5, 0.5, 0.45, "#4f8a5b"), // plant leaves
@@ -103,7 +106,7 @@ export const OBJECTS: Record<RoomId, { boxes: Box[]; camera: CameraPose }> = {
   },
 };
 
-export const OVERVIEW: CameraPose = { position: [15, 11, 15], target: [3, 1.2, 3] };
+export const OVERVIEW: CameraPose = { position: [13, 9.5, 13], target: [3, 1.2, 3] };
 
 export const ORBIT_LIMITS = {
   minAzimuth: 0.2,
@@ -111,7 +114,7 @@ export const ORBIT_LIMITS = {
   minPolar: 0.55,
   maxPolar: 1.25,
   minDistance: 7,
-  maxDistance: 24,
+  maxDistance: 20,
 };
 
 /** Keeps an orbit target inside the room, away from walls and floor/ceiling. */

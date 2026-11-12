@@ -1,292 +1,183 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState, type ElementRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, ContactShadows, Grid } from "@react-three/drei";
-import { MathUtils, Vector3 } from "three";
-import { SceneModel } from "./SceneModel";
-import { DEFAULT_TARGET, MODEL_LAYOUT, SCREENS, ZOOM_VIEWS } from "./layout";
-import { ShowcaseScreen } from "./ShowcaseScreen";
-import { ContactScreen } from "./ContactScreen";
-import { AboutScreen } from "./AboutScreen";
-import { StackScreen } from "./StackScreen";
-import type { ContentItem, SiteConfig } from "@/lib/portfolio";
+import { useEffect, useMemo, useRef, useState, type ElementRef } from "react";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
+import { ContactShadows, Html, OrbitControls } from "@react-three/drei";
+import { BoxGeometry, MathUtils, Vector3 } from "three";
+import { clampTarget, DECOR, OBJECTS, ORBIT_LIMITS, OVERVIEW, type Box, type RoomId, type Vec3 } from "@/lib/room";
 
-// Calibration flag from .env.local (NEXT_PUBLIC_ is inlined into the client
-// bundle). True shows the drei Grid + axes helper while tuning MODEL_LAYOUT.
-const DEBUG = process.env.NEXT_PUBLIC_DEBUG_SCENE === "true";
-
-// drei OrbitControls enforces these in its own useFrame update() (priority -1).
-// CameraRig mirrors them onto the instance the frame it re-enables controls, so
-// there is no one-frame snap while React catches up with the `zoomed` state.
-const DEFAULT_CLAMPS = { minDistance: 1.5, maxDistance: 7, maxPolarAngle: Math.PI / 2.1 };
-const ZOOMED_CLAMPS = { minDistance: 0.5, maxDistance: 2.5, maxPolarAngle: Math.PI / 2 };
-
-const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
+const DAMP_LAMBDA = 6;
 const ARRIVE_EPS = 0.005;
-// Limited free rotation at the overview pose: a little, then it eases back.
-const AZIMUTH_RANGE = 0.26;
-const POLAR_RANGE = 0.15;
-const RETURN_DELAY_MS = 300;
 
 interface DesktopSceneProps {
+  active: RoomId[];
+  labels: Record<RoomId, string>;
+  focus: RoomId | null;
+  onSelect: (id: RoomId) => void;
+  onBackgroundClick: () => void;
   /** Called when the WebGL context is lost so the page can fall back to Standard View. */
   onContextLost?: () => void;
-  /** Jump to each stop pose instead of flying (prefers-reduced-motion). */
+  /** Jump to each pose instead of flying (prefers-reduced-motion). */
   reducedMotion?: boolean;
-  /** Objects other than the PC (notebook/whiteboard/phone) open modals directly. */
-  onOpenModal: (id: string) => void;
-  /** "pc" while the showcase zoom is active; null in the idle desk view. */
-  zoomTarget: string | null;
-  projects: ContentItem[];
-  showcaseContent?: ContentItem;
-  /** Contact item rendered on the phone screen while its zoom is active. */
-  contactContent?: ContentItem;
-  /** About item rendered as an open book on the notebook while its zoom is active. */
-  aboutContent?: ContentItem;
-  stackContent?: ContentItem;
-  categoryLabels: SiteConfig["categoryLabels"];
-  onCloseShowcase: () => void;
 }
 
 type ControlsImpl = ElementRef<typeof OrbitControls>;
 
-/**
- * Projects the inspected screen's world corners to the viewport and reports
- * the pixel size of the panel. Lives inside <Canvas> (needs useThree);
- * re-projects every frame while zoomed so the panel tracks the camera and any
- * resize. The onSize setter is the stable setState from DesktopScene.
- * Orientation-agnostic: whichever projected edge is closer to horizontal is
- * the panel's width, the other its height. This lets the same logic serve the
- * monitor (long axis horizontal) and the phone presented portrait (long axis
- * vertical on screen).
- */
-function GlassProjector({
-  corners,
-  onSize,
+// Deferred cursor clear (rAF) makes over/out ordering-safe when moving straight
+// from one object to another: the new over re-sets the flag before the clear runs.
+let interactiveHovered = false;
+
+function Boxes({ boxes, geometry, hovered = false }: { boxes: Box[]; geometry: BoxGeometry; hovered?: boolean }) {
+  return boxes.map((b, i) => (
+    <mesh key={i} geometry={geometry} position={b.position} scale={b.size}>
+      <meshStandardMaterial
+        color={b.color}
+        flatShading
+        emissive={b.color}
+        emissiveIntensity={b.glow ? (hovered ? 1.4 : 1) : hovered ? 0.3 : 0}
+        toneMapped={!b.glow}
+      />
+    </mesh>
+  ));
+}
+
+function RoomObject({
+  id,
+  label,
+  clickable,
+  geometry,
+  onSelect,
 }: {
-  corners: { bl: [number, number, number]; br: [number, number, number]; tl: [number, number, number] };
-  onSize: (w: number, h: number) => void;
+  id: RoomId;
+  label: string;
+  clickable: boolean;
+  geometry: BoxGeometry;
+  onSelect: (id: RoomId) => void;
 }) {
-  const refs = useThree((s) => ({ gl: s.gl, camera: s.camera }));
-  const last = useRef({ w: 0, h: 0 });
-  useFrame(() => {
-    const renderer = refs.gl;
-    const camera = refs.camera;
-    const w = renderer.domElement.clientWidth;
-    const h = renderer.domElement.clientHeight;
-    if (w === 0 || h === 0) return;
-    const px = (p: [number, number, number]) =>
-      new Vector3(p[0], p[1], p[2]).project(camera);
-    const bl = px(corners.bl);
-    const br = px(corners.br);
-    const tl = px(corners.tl);
-    // Edge vectors in viewport pixels. project() maps clip space to NDC
-    // (-1..1), so an edge spanning full width is 2.0 NDC, not 1.0 — divide by
-    // 2 to convert to true viewport pixels. (Without it the panel is 2x too
-    // big; the PC panel only looked fine because its camDist is far enough that
-    // 2x still fit the viewport.) The screen is axis-aligned on screen under
-    // the locked perpendicular camera (one edge horizontal, the other
-    // vertical), so the dominant component of each edge tells which is which.
-    const ex = ((br.x - bl.x) * w) / 2;
-    const ey = ((br.y - bl.y) * h) / 2;
-    const fx = ((tl.x - bl.x) * w) / 2;
-    const fy = ((tl.y - bl.y) * h) / 2;
-    const len = (x: number, y: number) => Math.hypot(x, y);
-    const brIsHorizontal = Math.abs(ex) >= Math.abs(ey);
-    const size = {
-      w: brIsHorizontal ? len(ex, ey) : len(fx, fy),
-      h: brIsHorizontal ? len(fx, fy) : len(ex, ey),
-    };
-    if (last.current.w !== size.w || last.current.h !== size.h) {
-      last.current = size;
-      onSize(size.w, size.h);
-    }
-  });
-  return null;
+  const [hovered, setHovered] = useState(false);
+  const boxes = OBJECTS[id].boxes;
+  const labelAt = useMemo<Vec3>(() => {
+    const lo = (a: number) => Math.min(...boxes.map((b) => b.position[a] - b.size[a] / 2));
+    const hi = (a: number) => Math.max(...boxes.map((b) => b.position[a] + b.size[a] / 2));
+    return [(lo(0) + hi(0)) / 2, hi(1) + 0.35, (lo(2) + hi(2)) / 2];
+  }, [boxes]);
+
+  const handlers = clickable
+    ? {
+        onClick: (e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
+          onSelect(id);
+        },
+        onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+          e.stopPropagation();
+          interactiveHovered = true;
+          document.body.style.cursor = "pointer";
+          setHovered(true);
+        },
+        onPointerOut: (e: ThreeEvent<PointerEvent>) => {
+          e.stopPropagation();
+          interactiveHovered = false;
+          setHovered(false);
+          requestAnimationFrame(() => {
+            if (!interactiveHovered) document.body.style.cursor = "";
+          });
+        },
+      }
+    : {};
+
+  const lit = clickable && hovered;
+  return (
+    <group {...handlers}>
+      <Boxes boxes={boxes} geometry={geometry} hovered={lit} />
+      {lit && (
+        <Html position={labelAt} center pointerEvents="none" zIndexRange={[5, 0]}>
+          <span className="pointer-events-none whitespace-nowrap rounded-sm border border-line bg-surface/90 px-2 py-1 font-mono text-xs text-text-primary">
+            {label}
+          </span>
+        </Html>
+      )}
+    </group>
+  );
 }
 
 /**
- * Flies the camera to/from the monitor screen center with damped easing.
- * Zoom transitions are detected and acted on *inside* useFrame (not in a
- * useEffect) so OrbitControls is disabled on the exact same frame the damp
- * starts — no one-frame gap where OrbitControls.update() fights the camera.
+ * Flies the camera between the overview and each object pose with damped
+ * easing. The pose change is detected inside useFrame so OrbitControls is
+ * disabled on the same frame the flight starts (no fight with update()).
+ * Controls come back only once the camera has arrived at the overview.
  */
-function CameraRig({
-  zoomTarget,
-  zoomPos,
-  zoomLookTarget,
-  zoomUp,
-  reducedMotion,
-  onZoomed,
-}: {
-  zoomTarget: string | null;
-  zoomPos: Vector3;
-  zoomLookTarget: Vector3;
-  zoomUp: [number, number, number];
-  reducedMotion: boolean;
-  onZoomed: (zoomed: boolean) => void;
-}) {
-  const camera = useThree((s) => s.camera);
-  const controls = useThree((s) => s.controls) as ControlsImpl | null;
+function CameraRig({ focus, reducedMotion }: { focus: RoomId | null; reducedMotion: boolean }) {
+  const pose = focus ? OBJECTS[focus].camera : OVERVIEW;
 
-  // makeDefault fills s.controls after the first render. Stash it in a ref
-  // (assigned in an effect, read only from useFrame callbacks) so the frame
-  // loop sees a non-null, stable instance without accessing refs in render.
-  const ocRef = useRef<ControlsImpl | null>(null);
-  useEffect(() => {
-    if (controls && !ocRef.current) ocRef.current = controls;
-  }, [controls]);
-
-  const anim = useRef<{
-    from: Vector3;
-    fromTarget: Vector3;
-    to: Vector3;
-    toTarget: Vector3;
-  } | null>(null);
-  // Overview pose, captured once on the first frame; every zoom-out and every spring-back lands here.
-  const restore = useRef<{ pos: Vector3; target: Vector3 } | null>(null);
+  const prevPose = useRef(OVERVIEW);
+  const anim = useRef<{ to: Vector3; toTarget: Vector3 } | null>(null);
   const reducedRef = useRef(reducedMotion);
   useEffect(() => {
     reducedRef.current = reducedMotion;
   }, [reducedMotion]);
 
-  // Spring back to the overview pose shortly after the user releases a drag.
-  useEffect(() => {
+  useFrame(({ camera, controls: c }, delta) => {
+    const controls = c as ControlsImpl | null;
     if (!controls) return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const onEnd = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        const home = restore.current;
-        if (!home || !ocRef.current?.enabled) return;
-        anim.current = {
-          from: camera.position.clone(),
-          fromTarget: ocRef.current.target.clone(),
-          to: home.pos,
-          toTarget: home.target,
-        };
-        ocRef.current.enabled = false;
-      }, RETURN_DELAY_MS);
-    };
-    controls.addEventListener("end", onEnd);
-    return () => {
-      clearTimeout(timer);
-      controls.removeEventListener("end", onEnd);
-    };
-  }, [controls, camera]);
 
-  const limitsSet = useRef(false);
-  const lockRotationAroundPose = (oc: ControlsImpl) => {
-    // getAzimuthalAngle/getPolarAngle report the last update(); refresh so they match the camera we just placed.
-    oc.update();
-    const az = oc.getAzimuthalAngle();
-    const pol = oc.getPolarAngle();
-    oc.minAzimuthAngle = az - AZIMUTH_RANGE;
-    oc.maxAzimuthAngle = az + AZIMUTH_RANGE;
-    oc.minPolarAngle = Math.max(0, pol - POLAR_RANGE);
-    oc.maxPolarAngle = Math.min(DEFAULT_CLAMPS.maxPolarAngle, pol + POLAR_RANGE);
-  };
-  // Track previous zoomTarget inside useFrame to avoid useEffect timing gaps.
-  const prevZt = useRef<string | null>(null);
-
-  useFrame((_, delta) => {
-    const oc = ocRef.current;
-    if (!oc) return;
-
-    if (!restore.current) {
-      restore.current = { pos: camera.position.clone(), target: oc.target.clone() };
-    }
-    if (!limitsSet.current) {
-      lockRotationAroundPose(oc);
-      limitsSet.current = true;
+    if (pose !== prevPose.current) {
+      prevPose.current = pose;
+      anim.current = { to: new Vector3(...pose.position), toTarget: new Vector3(...pose.target) };
+      controls.enabled = false;
     }
 
-    // --- Detect zoomTarget transition on the first frame it changes ---
-    if (zoomTarget !== prevZt.current) {
-      prevZt.current = zoomTarget;
-      onZoomed(false); // panels wait for arrival
-      if (zoomTarget) {
-        // Zoom-in: the overview pose was captured once on the first frame, so a
-        // zoom → zoom transition (about → stack) still returns to the desk.
-        anim.current = {
-          from: camera.position.clone(),
-          fromTarget: oc.target.clone(),
-          to: zoomPos.clone(),
-          toTarget: zoomLookTarget.clone(),
-        };
-        oc.enabled = false; // same frame as the first damp → zero fight
-      } else if (restore.current) {
-        // Zoom-out: fly back to the captured pre-zoom pose.
-        anim.current = {
-          from: camera.position.clone(),
-          fromTarget: oc.target.clone(),
-          to: restore.current.pos,
-          toTarget: restore.current.target,
-        };
-        oc.enabled = false;
-      }
-    }
-
-    // --- Per-frame damp ---
     const a = anim.current;
     if (!a) return;
     const pos = camera.position;
+    const target = controls.target;
     if (reducedRef.current) {
       pos.copy(a.to);
-      oc.target.copy(a.toTarget);
+      target.copy(a.toTarget);
     }
     pos.set(
       MathUtils.damp(pos.x, a.to.x, DAMP_LAMBDA, delta),
       MathUtils.damp(pos.y, a.to.y, DAMP_LAMBDA, delta),
       MathUtils.damp(pos.z, a.to.z, DAMP_LAMBDA, delta),
     );
-    const target = oc.target;
     target.set(
       MathUtils.damp(target.x, a.toTarget.x, DAMP_LAMBDA, delta),
       MathUtils.damp(target.y, a.toTarget.y, DAMP_LAMBDA, delta),
       MathUtils.damp(target.z, a.toTarget.z, DAMP_LAMBDA, delta),
     );
-    camera.up.set(...zoomUp);
     camera.lookAt(target);
 
-    if (
-      pos.distanceTo(a.to) < ARRIVE_EPS &&
-      target.distanceTo(a.toTarget) < ARRIVE_EPS
-    ) {
+    if (pos.distanceTo(a.to) < ARRIVE_EPS && target.distanceTo(a.toTarget) < ARRIVE_EPS) {
       pos.copy(a.to);
       target.copy(a.toTarget);
-      camera.up.set(...zoomUp);
-      const clamps = zoomTarget ? ZOOMED_CLAMPS : DEFAULT_CLAMPS;
-      oc.minDistance = clamps.minDistance;
-      oc.maxDistance = clamps.maxDistance;
-      oc.maxPolarAngle = clamps.maxPolarAngle;
-      if (zoomTarget == null) lockRotationAroundPose(oc);
-      // Locked while inspecting the monitor: no drag/rotate or wheel-zoom until
-      // the user exits (re-click or Esc), which re-enables controls on the way out.
-      oc.enabled = zoomTarget == null;
       anim.current = null;
-      onZoomed(zoomTarget != null);
+      controls.enabled = focus === null;
     }
   });
 
   return null;
 }
 
+/** Pulls a panned target back into the room, moving the camera by the same amount so the view keeps its angle. */
+function keepInRoom(e?: { target: ControlsImpl }) {
+  const oc = e?.target;
+  if (!oc) return;
+  const t = oc.target;
+  const [x, y, z] = clampTarget([t.x, t.y, t.z]);
+  if (x === t.x && y === t.y && z === t.z) return;
+  oc.object.position.add(new Vector3(x - t.x, y - t.y, z - t.z));
+  t.set(x, y, z);
+}
+
 /**
- * "Midnight Engineering" 3D desktop. Renders at z-0 behind the HUD overlay
- * (z-10); the wrapper is aria-hidden since interactive content lives in HUD/Modal.
+ * Low-poly night bedroom built from unit boxes. Renders at z-0 behind the HUD
+ * overlay; the wrapper is aria-hidden since interactive content lives in HUD/Modal.
  */
 export function DesktopScene({
-  onOpenModal,
-  zoomTarget,
-  projects,
-  showcaseContent,
-  contactContent,
-  aboutContent,
-  stackContent,
-  categoryLabels,
-  onCloseShowcase,
+  active,
+  labels,
+  focus,
+  onSelect,
+  onBackgroundClick,
   onContextLost,
   reducedMotion = false,
 }: DesktopSceneProps) {
@@ -296,172 +187,64 @@ export function DesktopScene({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      interactiveHovered = false;
+      document.body.style.cursor = "";
     };
   }, []);
-  const [zoomed, setZoomed] = useState(false);
-  // Pixel size of the showcase panel, reported by GlassProjector (inside the
-  // Canvas) from the monitor glass's world bounds projected to the viewport.
-  // w/h are the horizontal (z) and vertical (y) world extents in pixels.
-  const [screenSize, setScreenSize] = useState({ w: 0, h: 0 });
 
-  const zoomView = useMemo(() => {
-    const cfg = ZOOM_VIEWS[zoomTarget ?? "pc"] ?? ZOOM_VIEWS.pc;
-    // screenOffset is relative to the object group origin, so add it to the
-    // object's world position.
-    const anchor = MODEL_LAYOUT.find(
-      (m) => m.id === (zoomTarget ?? "showcase"),
-    );
-    const base = anchor
-      ? new Vector3(...anchor.position)
-      : new Vector3(...MODEL_LAYOUT.find((m) => m.key === "monitor")!.position);
-    const lookTarget = base.clone().add(new Vector3(...cfg.screenOffset));
-    const camDir = new Vector3(...cfg.camDir);
-    return {
-      lookTarget,
-      camPos: lookTarget.clone().add(camDir.multiplyScalar(cfg.camDist)),
-      camUp: cfg.camUp,
-    };
-  }, [zoomTarget]);
+  const geometry = useMemo(() => new BoxGeometry(1, 1, 1), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
-  // OrbitControls sets touch-action:none inline; the !important utility lets touch users still scroll the journey.
   return (
-    <div aria-hidden className="fixed inset-0 z-0 [&_*]:touch-pan-y!">
-      <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}
+    <div aria-hidden className="fixed inset-0 z-0">
+      <Canvas
+        dpr={[1, 2]}
+        camera={{ position: OVERVIEW.position, fov: 35 }}
+        onPointerMissed={onBackgroundClick}
         onCreated={({ gl }) =>
           gl.domElement.addEventListener("webglcontextlost", () => {
             if (mountedRef.current) onContextLost?.();
           })
         }
       >
-        {/* ── Ambient: neutral base so every material reads true ── */}
-        <ambientLight intensity={0.22} color="#e6ecf4" />
-        {/* ── Hemisphere: cool sky above + warm bounce below — lifts the tops of
-             the notebook, phone, and whiteboard; keeps the desk from going flat ── */}
-        <hemisphereLight intensity={0.45} color="#dce5f2" groundColor="#3a2e20" />
+        <color attach="background" args={["#0f0d17"]} />
+        <ambientLight intensity={0.45} color="#b9a8d6" />
+        {/* Desk lamp head: the main warm source. */}
+        <pointLight position={[1.07, 1.5, 0.57]} intensity={9} distance={9} decay={1.6} color="#ffb86b" />
+        <pointLight position={[2.2, 1.8, 0.8]} intensity={1.5} distance={3} color="#9be7c4" />
+        <pointLight position={[2.2, 2.6, 0.6]} intensity={2} distance={5} color="#6f8fd6" />
+        {/* Cool moonlight from the window side keeps the dark faces readable. */}
+        <directionalLight position={[4, 7, 1]} intensity={0.7} color="#8fa3d9" />
 
-        {/* ── Key (desk lamp): warm pool from the camera-side upper right —
-             lights the desk top, the notebook cover, and the phone's screen ── */}
-        <spotLight
-          position={[2.6, 3.4, 1.4]}
-          angle={0.55}
-          penumbra={0.9}
-          intensity={28}
-          distance={8}
-          color="#ffdcae"
-        />
-
-        {/* ── Fill (moonlight): cool from the camera side (+x/+z) — lifts the
-             PC's right face, the notebook, and the whiteboard's visible face ── */}
-        <directionalLight position={[3, 1.6, 1.8]} intensity={0.6} color="#b6c6de" />
-
-        {/* ── Rim: subtle cool from behind-left — separates the PC and
-             whiteboard silhouettes from the night background ── */}
-        <directionalLight position={[-2.5, 1.4, -2]} intensity={0.3} color="#8090ac" />
-
-        {/* ── Monitor glow (brand accent): tight emerald pool at the screen so
-             it reads as atmosphere, not a flood on the desk or whiteboard ── */}
-        <pointLight position={[-0.02, 1.25, 0.4]} intensity={3.5} distance={1.5} color="#10b981" />
-
-        <Suspense fallback={null}>
-          {MODEL_LAYOUT.map((model) => (
-            <SceneModel key={model.key} layout={model} onOpenModal={onOpenModal} />
-          ))}
-        </Suspense>
-
-        <CameraRig
-          zoomTarget={zoomTarget}
-          zoomPos={zoomView.camPos}
-          zoomLookTarget={zoomView.lookTarget}
-          zoomUp={zoomView.camUp}
-          reducedMotion={reducedMotion}
-          onZoomed={setZoomed}
-        />
-
-        <GlassProjector
-          corners={SCREENS[zoomTarget ?? "pc"] ?? SCREENS.pc}
-          onSize={(w, h) => setScreenSize({ w, h })}
-        />
-
-        {zoomed && zoomTarget === "pc" && showcaseContent && screenSize.w > 0 && (
-          <ShowcaseScreen
-            position={zoomView.lookTarget.toArray() as [number, number, number]}
-            widthPx={screenSize.w}
-            heightPx={screenSize.h}
-            content={showcaseContent}
-            projects={projects}
-            onClose={onCloseShowcase}
+        <Boxes boxes={DECOR} geometry={geometry} />
+        {(Object.keys(OBJECTS) as RoomId[]).map((id) => (
+          <RoomObject
+            key={id}
+            id={id}
+            label={labels[id]}
+            clickable={active.includes(id)}
+            geometry={geometry}
+            onSelect={onSelect}
           />
-        )}
+        ))}
 
-        {zoomed && zoomTarget === "contact" && contactContent && screenSize.w > 0 && (
-          <ContactScreen
-            position={zoomView.lookTarget.toArray() as [number, number, number]}
-            widthPx={screenSize.w}
-            heightPx={screenSize.h}
-            content={contactContent}
-            onClose={onCloseShowcase}
-          />
-        )}
+        <ContactShadows position={[3, 0.002, 3]} opacity={0.6} scale={6} blur={2.2} far={2.5} resolution={512} color="#0f0d17" />
 
-        {zoomed && zoomTarget === "about" && aboutContent && screenSize.w > 0 && (
-          <AboutScreen
-            position={zoomView.lookTarget.toArray() as [number, number, number]}
-            widthPx={screenSize.w}
-            heightPx={screenSize.h}
-            content={aboutContent}
-            onClose={onCloseShowcase}
-          />
-        )}
+        <CameraRig focus={focus} reducedMotion={reducedMotion} />
 
-        {zoomed && zoomTarget === "stack" && stackContent && screenSize.w > 0 && (
-          <StackScreen
-            position={[zoomView.lookTarget.x, zoomView.lookTarget.y, zoomView.lookTarget.z + 0.005]}
-            content={stackContent}
-            categoryLabels={categoryLabels}
-            onClose={onCloseShowcase}
-          />
-        )}
-
-        {/* Grounds the scene; renders its own depth pass, no renderer shadows needed */}
-        <ContactShadows
-          position={[0, 0.001, 0]}
-          opacity={0.55}
-          scale={8}
-          blur={2.4}
-          far={2}
-          resolution={512}
-          color="#0f172a"
-        />
-
-        {DEBUG && (
-          <>
-            <Grid
-              infiniteGrid
-              cellSize={0.25}
-              cellThickness={0.6}
-              cellColor="#1e293b"
-              sectionSize={1}
-              sectionThickness={1}
-              sectionColor="#10b981"
-              fadeDistance={8}
-            />
-            <axesHelper args={[2]} />
-          </>
-        )}
-
-        {/* makeDefault so CameraRig can read controls via useThree. Clamps only
-            matter in the idle desk view — while zoomed the camera is locked
-            (oc.enabled stays false), so ZOOMED_CLAMPS is never live. */}
         <OrbitControls
           makeDefault
-          enablePan={false}
-          enableZoom={false}
           enableDamping={false}
-          minDistance={DEFAULT_CLAMPS.minDistance}
-          maxDistance={DEFAULT_CLAMPS.maxDistance}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={DEFAULT_CLAMPS.maxPolarAngle}
-          target={DEFAULT_TARGET}
+          enableZoom
+          enablePan
+          target={OVERVIEW.target}
+          minAzimuthAngle={ORBIT_LIMITS.minAzimuth}
+          maxAzimuthAngle={ORBIT_LIMITS.maxAzimuth}
+          minPolarAngle={ORBIT_LIMITS.minPolar}
+          maxPolarAngle={ORBIT_LIMITS.maxPolar}
+          minDistance={ORBIT_LIMITS.minDistance}
+          maxDistance={ORBIT_LIMITS.maxDistance}
+          onChange={keepInRoom}
         />
       </Canvas>
     </div>
