@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   CodeIcon,
   DesktopIcon,
@@ -55,6 +56,13 @@ export function HUD({ brand, navItems, onToggleStandard, onOpen, zoomed }: HUDPr
           Standard View
         </Button>
       </div>
+
+      <Link
+        href="/credits"
+        className="pointer-events-auto absolute bottom-6 left-6 font-mono text-xs text-text-secondary hover:text-text-primary"
+      >
+        Credits
+      </Link>
 
       {/* Bottom-center hint (hidden while zoomed into the PC) */}
       {!zoomed && (

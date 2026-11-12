@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/Button";
 import { TechPill } from "@/components/ui/TechPill";
@@ -286,6 +287,11 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
           </div>
         </div>
       </section>
+      <footer className="pt-16 text-center font-mono text-xs text-text-secondary">
+        <Link href="/credits" className="hover:text-text-primary">
+          Credits
+        </Link>
+      </footer>
     </main>
   );
 }
