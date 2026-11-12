@@ -83,7 +83,8 @@ export const OBJECTS: Record<RoomId, { boxes: Box[]; camera: CameraPose }> = {
       fromSketch(2.1, 0.34, 1.12, 0.2, 0.2, 0.33, "#2a2a2a"), // monitor stand
       monitorScreen,
     ],
-    camera: cameraFor(monitorScreen.position, [2.2, 1, 2.6]),
+    // Target shifted along screen-right so the monitor sits left of the HUD nav column and the room panel.
+    camera: cameraFor([monitorScreen.position[0] + 0.2, monitorScreen.position[1], monitorScreen.position[2] - 0.17], [2.2, 1, 2.6]),
   },
   stack: {
     boxes: [pc],

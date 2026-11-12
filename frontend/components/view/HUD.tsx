@@ -79,7 +79,7 @@ export function HUD({
   return (
     <div className="pointer-events-none fixed inset-0 z-10">
       {/* Top-left name mark */}
-      <div className="pointer-events-auto absolute left-6 top-6 flex items-center gap-2">
+      <div className="pointer-events-auto absolute left-6 top-6 flex items-center gap-2 rounded-sm bg-surface/90 px-3 py-2 backdrop-blur">
         <span
           aria-hidden="true"
           className="h-2 w-2 bg-primary"
@@ -90,7 +90,7 @@ export function HUD({
       </div>
 
       {/* Top-right actions; shift left of the room panel so its close button stays clear */}
-      <div className={`pointer-events-auto absolute top-6 flex items-center gap-3 ${panelOpen ? LEFT_OF_PANEL : "right-6"}`}>
+      <div className={`pointer-events-auto absolute top-6 flex items-center gap-3 rounded-sm bg-surface/90 px-2 py-1 backdrop-blur ${panelOpen ? LEFT_OF_PANEL : "right-6"}`}>
         {availability?.isAvailable && !panelOpen && <AvailabilityBadge availability={availability} />}
         {resumeHref && (
           <a
