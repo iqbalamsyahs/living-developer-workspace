@@ -21,6 +21,10 @@ interface HUDProps {
   onOpen: (id: string) => void;
   /** True while the showcase is zoomed on the monitor; hides the orbit hint. */
   zoomed: boolean;
+  /** Scroll-journey mode: jump to the contact stop. */
+  onContact: () => void;
+  /** Scroll-journey mode: hint says scroll instead of drag. */
+  journeyHint: boolean;
   hireMeHref?: string;
   resumeHref?: string;
   availability?: Availability;
@@ -67,6 +71,8 @@ export function HUD({
   onToggleStandard,
   onOpen,
   zoomed,
+  onContact,
+  journeyHint,
   hireMeHref,
   resumeHref,
   availability,
@@ -97,6 +103,9 @@ export function HUD({
             Resume
           </a>
         )}
+        <Button variant="ghost" size="sm" onClick={onContact}>
+          Contact
+        </Button>
         {hireMeHref && (
           <a
             href={hireMeHref}
@@ -121,7 +130,7 @@ export function HUD({
       {/* Bottom-center hint (hidden while zoomed into the PC) */}
       {!zoomed && (
         <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center font-mono text-xs text-text-secondary">
-          Drag to rotate · Click glowing objects to inspect
+          {journeyHint ? "Scroll to explore · Click glowing objects" : "Drag to rotate · Click glowing objects to inspect"}
         </p>
       )}
 

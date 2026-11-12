@@ -79,7 +79,8 @@ try {
     } else if (action === "release") {
       await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: lastDrag.x, y: lastDrag.y, button: "left", clickCount: 1 });
     } else if (action === "key") {
-      for (const type of ["keyDown", "keyUp"]) await send("Input.dispatchKeyEvent", { type, key: arg, code: arg });
+      const vk = { Escape: 27, Enter: 13, Tab: 9, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 }[arg];
+      for (const type of ["rawKeyDown", "keyUp"]) await send("Input.dispatchKeyEvent", { type, key: arg, code: arg, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk });
     } else if (action === "eval") console.log(name, "=>", JSON.stringify(await evaluate(arg)));
     else if (action === "log") console.log(name, `scrollY=${await evaluate("window.scrollY")} glbRequests=${glb}`);
     else if (action === "shot") {

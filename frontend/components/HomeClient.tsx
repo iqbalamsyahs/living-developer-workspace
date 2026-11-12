@@ -15,6 +15,7 @@ import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWebGL } from "@/hooks/useWebGL";
+import { ProgressDots } from "@/components/journey/ProgressDots";
 import { StopOverlay } from "@/components/journey/StopOverlay";
 import { useJourney } from "@/hooks/useJourney";
 import { buildStops, stopIndexForContent } from "@/lib/journey";
@@ -77,6 +78,18 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     else setActiveModal(id);
   };
   const closeShowcase = () => journey.goTo(0);
+  const contactIndex = stops.findIndex((s) => s.id === "contact");
+
+  // Esc backs out to the intro stop (a modal's own dialog handles its Escape).
+  const { activeIndex, goTo } = journey;
+  useEffect(() => {
+    if (!showHUD || activeModal != null || activeIndex === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") goTo(0);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showHUD, activeModal, activeIndex, goTo]);
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
 
@@ -135,14 +148,17 @@ export function HomeClient({ portfolio }: HomeClientProps) {
           />
           </SceneBoundary>
           {stops[journey.activeIndex] && (
-            <StopOverlay stop={stops[journey.activeIndex]} portfolio={portfolio} onOpen={openContent} />
+            <StopOverlay stop={stops[journey.activeIndex]} portfolio={portfolio} onOpen={setActiveModal} />
           )}
+          <ProgressDots stops={stops} activeIndex={journey.activeIndex} onSelect={journey.goTo} />
           <HUD
             brand={portfolio.siteConfig.brand}
             navItems={portfolio.siteConfig.navItems}
             onToggleStandard={toggleView}
             onOpen={openContent}
             zoomed={zoomTarget != null}
+            onContact={() => journey.goTo(contactIndex)}
+            journeyHint
             hireMeHref={hireMeHref(portfolio.profile.contact)}
             resumeHref={resumeHref({
               resumeFileUrl: portfolio.profile.resumeFileUrl,

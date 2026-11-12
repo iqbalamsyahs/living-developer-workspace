@@ -5,6 +5,8 @@ import { nearestStopIndex, scrollTopFor, snapTarget } from "@/lib/journey";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const SNAP_DELAY_MS = 150;
+// A programmatic smooth scroll owns the page until it lands or this long passes.
+const GOTO_GRACE_MS = 3000;
 
 interface JourneyOptions {
   count: number;
@@ -22,6 +24,7 @@ export function useJourney({ count, enabled, locked }: JourneyOptions) {
   const reducedMotion = useReducedMotion();
   const [rawIndex, setRawIndex] = useState(0);
   const activeIndex = Math.min(rawIndex, Math.max(0, count - 1));
+  const flight = useRef<{ top: number; until: number } | null>(null);
   const lockedRef = useRef(locked);
   useEffect(() => {
     lockedRef.current = locked;
@@ -37,12 +40,24 @@ export function useJourney({ count, enabled, locked }: JourneyOptions) {
       clearTimeout(timer);
       timer = setTimeout(() => {
         if (lockedRef.current) return;
+        const f = flight.current;
+        if (f && Date.now() < f.until && Math.abs(window.scrollY - f.top) > 2) {
+          sync();
+          return;
+        }
+        flight.current = null;
         const top = snapTarget(window.scrollY, window.innerHeight, count);
         if (top !== null) window.scrollTo({ top, behavior });
       }, SNAP_DELAY_MS);
     };
 
+    const cancelFlight = () => {
+      flight.current = null;
+    };
     const raf = requestAnimationFrame(sync);
+    window.addEventListener("wheel", cancelFlight, { passive: true });
+    window.addEventListener("touchstart", cancelFlight, { passive: true });
+    window.addEventListener("keydown", cancelFlight);
     window.addEventListener("scroll", sync, { passive: true });
     window.addEventListener("resize", sync);
     return () => {
@@ -50,6 +65,9 @@ export function useJourney({ count, enabled, locked }: JourneyOptions) {
       clearTimeout(timer);
       window.removeEventListener("scroll", sync);
       window.removeEventListener("resize", sync);
+      window.removeEventListener("wheel", cancelFlight);
+      window.removeEventListener("touchstart", cancelFlight);
+      window.removeEventListener("keydown", cancelFlight);
     };
   }, [enabled, count, reducedMotion]);
 
@@ -68,8 +86,10 @@ export function useJourney({ count, enabled, locked }: JourneyOptions) {
   const goTo = useCallback(
     (index: number) => {
       const clamped = Math.min(Math.max(0, index), Math.max(0, count - 1));
+      const top = scrollTopFor(clamped, window.innerHeight);
+      flight.current = { top, until: Date.now() + GOTO_GRACE_MS };
       window.scrollTo({
-        top: scrollTopFor(clamped, window.innerHeight),
+        top,
         behavior: reducedMotion ? "auto" : "smooth",
       });
     },
