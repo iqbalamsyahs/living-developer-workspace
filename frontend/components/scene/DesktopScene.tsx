@@ -241,7 +241,7 @@ export function DesktopScene({
     );
     const base = anchor
       ? new Vector3(...anchor.position)
-      : new Vector3(...MODEL_LAYOUT.find((m) => m.key === "pc")!.position);
+      : new Vector3(...MODEL_LAYOUT.find((m) => m.key === "monitor")!.position);
     const lookTarget = base.clone().add(new Vector3(...cfg.screenOffset));
     const camDir = new Vector3(...cfg.camDir);
     return {

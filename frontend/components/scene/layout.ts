@@ -1,49 +1,22 @@
 import type { SceneModelLayout } from "./SceneModel";
 
-// Positions calibrated against each GLB's world bounds (see plan notes):
-// - desk: origin sits on the floor, top surface at y=0.942, center x=0.242
-// - monitor: base at local y=0, centered on desk center -> y = 0.942; rotated Y 90deg
-//   and scaled 1.7x per user request
-// - book: open-book GLTF (CC-BY-4.0, Zayfert1999); Rz(90°) lays it flat,
-//   scale 0.196 → ~0.36 (spine) x ~0.507 (span) on the desk, left-front
-// - whiteboard: face lies in the Y-Z plane, rotated Y 180deg per user request
+// The v2 desk set (Sketchfab "Modern PC Desk Setup", CC BY 4.0) shares one transform:
+// source units are ~10x the scene (desk top at y 9.54 -> 0.954), and rotating -90deg about Y
+// turns the monitor (its screen faces source -Z) toward +X, where the camera sits.
+// World footprint: desk x [0.085, 0.915] z [-0.814, 0.814]; screen plane x 0.379.
+const DESK_SET = {
+  position: [0.5, 0, 0] as [number, number, number],
+  rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+  scale: [0.1, 0.1, 0.1] as [number, number, number],
+};
+
 export const MODEL_LAYOUT: SceneModelLayout[] = [
-  {
-    key: "desk",
-    url: "/glb/desk.glb",
-    position: [0.7, 0, 0],
-    rotation: [0, 0, 0],
-    scale: [1, 1, 1],
-  },
-  {
-    key: "keyboard",
-    url: "/glb/keyboard.glb",
-    position: [0.88, 0.955, -0.0074],
-    rotation: [0, Math.PI / 2, 0],
-    scale: [0.26, 0.26, 0.26],
-  },
-  {
-    key: "cpu",
-    url: "/glb/cpu.glb",
-    position: [0.65, 1.15, -0.7574],
-    rotation: [0, Math.PI / 2, 0],
-    scale: [0.0015, 0.0015, 0.0015],
-  },
-  {
-    key: "mouse",
-    url: "/glb/mouse.glb",
-    position: [0.90, 0.944, -0.4574],
-    rotation: [0, -Math.PI / 2, 0],
-    scale: [0.04, 0.04, 0.04],
-  },
-  {
-    key: "pc",
-    url: "/glb/monitor.glb",
-    id: "showcase",
-    position: [0.5, 1.075, -0.0074],
-    rotation: [0, 0, 0],
-    scale: [1, 1, 1],
-  },
+  { key: "desk", url: "/glb/v2/desk.glb", ...DESK_SET },
+  { key: "keyboard", url: "/glb/v2/keyboard.glb", ...DESK_SET },
+  { key: "cpu", url: "/glb/v2/pc.glb", ...DESK_SET },
+  { key: "mouse", url: "/glb/v2/mouse.glb", ...DESK_SET },
+  { key: "speakers", url: "/glb/v2/speakers.glb", ...DESK_SET },
+  { key: "monitor", url: "/glb/v2/monitor.glb", id: "showcase", ...DESK_SET },
   // Open book ("Simple animated book" by Zayfert1999, Sketchfab, CC-BY-4.0).
   // Replaces the old closed notebook: the open book IS the About surface. Rest
   // pose is already an open book (skinned mesh, no useful animation clip), so it
@@ -57,7 +30,7 @@ export const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "book",
     url: "/animated_book/scene.gltf",
     id: "about",
-    position: [0.727, 0.9665, 0.78],
+    position: [0.7, 0.9785, -0.56],
     rotation: [0, 5, Math.PI / 2],
     scale: [0.13, 0.13, 0.13],
   },
@@ -65,7 +38,7 @@ export const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "whiteboard",
     url: "/glb/whiteboard.glb",
     id: "stack",
-    position: [0.942, 0.84, 1.5],
+    position: [0.5, 0.84, 1.31],
     rotation: [0, Math.PI / 2, 0],
     scale: [1, 1, 1],
   },
@@ -73,7 +46,7 @@ export const MODEL_LAYOUT: SceneModelLayout[] = [
     key: "phone",
     url: "/glb/phone.glb",
     id: "contact",
-    position: [1.35, 0.943, -0.7],
+    position: [0.78, 0.954, 0.44],
     rotation: [Math.PI / 2, 0, Math.PI / 2],
     scale: [0.15, 0.15, 0.15],
   },
@@ -96,9 +69,10 @@ export const ZOOM_VIEWS: Record<
     camUp: [number, number, number];
   }
 > = {
-  // PC monitor screen (measured from monitor.glb: screen-glass centers at
-  // local (0.026, 0.186, 0.007), spans 0.730 (z) x 0.440 (y)). Faces +X.
-  pc: { screenOffset: [0.026, 0.186, 0.007], camDist: 1, camDir: [1, 0, 0], camUp: [0, 1, 0] },
+  // Ultrawide screen (scripts/glb/measure-screen.mjs: source quad centre (-0.6128, 12.5842, 1.2112),
+  // 9.47 x 4.66, ratio 2.03:1). Offset from the DESK_SET origin after scale 0.1 and Ry(-90deg):
+  // (-z, y, x) * 0.1. Faces +X; camDist 1.1 shows the 0.947-wide glass with bezel margin at 16:9.
+  pc: { screenOffset: [-0.12112, 1.25842, -0.06128], camDist: 1.1, camDir: [1, 0, 0], camUp: [0, 1, 0] },
   // Flat phone (see MODEL_LAYOUT): lies flat, screen faces +Y at world y 0.9536,
   // spans x [1.2294, 1.4484] x z [-0.7532, -0.6482], center (1.3389, 0.9536, -0.7).
   // camDir [0,1,0] parks the camera directly above. camUp [-1,0,0] puts world
@@ -125,18 +99,18 @@ export const ZOOM_VIEWS: Record<
     screenOffset: [-0.0332, 0.0163, -0.1122],
     camDist: 0.5,
     camDir: [0, 1, 0],
-    camUp: [-0.2837, 0, -0.9589],
+    camUp: [0.2837, 0, 0.9589],
   },
 };
 
-export const DEFAULT_TARGET: [number, number, number] = [0.25, 0.5, 0];
+export const DEFAULT_TARGET: [number, number, number] = [0.5, 0.5, 0];
 
 // Screen-glass of monitor.glb (identity node transforms): local x/y/z ranges.
 // The glass is 0.730 wide (z) x 0.440 tall (y). The panel is pixel-sized from
 // these world bounds projected to the screen, so it overlays the actual glass.
 export const GLASS_BOUNDS = {
-  min: { x: 0.645, y: -0.047843, z: -0.37929 },
-  max: { x: 0.845, y: 0.445057, z: 0.43671 },
+  min: { x: 0.37888, y: 1.02522, z: -0.5348 },
+  max: { x: 0.37888, y: 1.49162, z: 0.41225 },
 };
 
 // World-space screen rectangles keyed by zoom target, as three corners
@@ -159,9 +133,9 @@ export const SCREENS: Record<
     tl: [GLASS_BOUNDS.min.x, GLASS_BOUNDS.max.y, GLASS_BOUNDS.min.z],
   },
   contact: {
-    bl: [1.2094, 0.95, -0.622],
-    br: [1.4484, 0.95, -0.622],
-    tl: [1.2094, 0.95, -0.7532],
+    bl: [0.6394, 0.961, 0.518],
+    br: [0.8784, 0.961, 0.518],
+    tl: [0.6394, 0.961, 0.3868],
   },
   // Open book (MODEL_LAYOUT pos [0.727,0.9665,0.78], Rz 90° + yaw 5, scale
   // 0.13): pages lie flat (broad face → +Y), spun on the desk by the yaw. These
@@ -175,8 +149,8 @@ export const SCREENS: Record<
   // world units (transform mode), so these corners only gate visibility via
   // GlassProjector's screenSize.w > 0 check.
   about: {
-    bl: [0.8887, 0.9828, 0.734],
-    br: [0.5662, 0.9828, 0.8294],
-    tl: [0.8211, 0.9828, 0.5053],
+    bl: [0.8617, 0.9948, -0.606],
+    br: [0.5392, 0.9948, -0.5106],
+    tl: [0.7941, 0.9948, -0.8347],
   },
 };
