@@ -15,6 +15,7 @@ import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWebGL } from "@/hooks/useWebGL";
+import { StopOverlay } from "@/components/journey/StopOverlay";
 import { useJourney } from "@/hooks/useJourney";
 import { buildStops, stopIndexForContent } from "@/lib/journey";
 
@@ -133,6 +134,9 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             onCloseShowcase={closeShowcase}
           />
           </SceneBoundary>
+          {stops[journey.activeIndex] && (
+            <StopOverlay stop={stops[journey.activeIndex]} portfolio={portfolio} onOpen={openContent} />
+          )}
           <HUD
             brand={portfolio.siteConfig.brand}
             navItems={portfolio.siteConfig.navItems}
