@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HUD } from "@/components/view/HUD";
 import { StandardView } from "@/components/view/StandardView";
 import { SplashScreen } from "@/components/view/SplashScreen";
@@ -15,6 +15,8 @@ import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWebGL } from "@/hooks/useWebGL";
+import { useJourney } from "@/hooks/useJourney";
+import { buildStops, stopIndexForContent } from "@/lib/journey";
 
 // ssr:false + dynamic keeps three.js and every .glb out of the mobile bundle and the server render.
 const DesktopScene = dynamic(
@@ -23,8 +25,6 @@ const DesktopScene = dynamic(
 );
 
 // z-scale: 3D canvas -1 | HUD overlay 10 | modal dialog top-layer.
-
-const SPIKE_STAGES: (string | null)[] = [null, "about", "pc", "contact"];
 
 interface HomeClientProps {
   portfolio: PortfolioData;
@@ -39,11 +39,6 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // null until probed on the client; the 3D bundle only loads once WebGL is known to work.
   const webgl = useWebGL();
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  // "pc" while the showcase is shown on the monitor (3D zoom); null when the
-  // showcase is closed and the camera returns to the desk. The PC model and the
-  // HUD showcase button both set this instead of opening a dialog.
-  const [zoomTarget, setZoomTarget] = useState<string | null>(null);
-
   // Boot splash. SSR media query defaults to the mobile StandardView, so the
   // first paint is always Standard; without a cover, desktop users see a
   // Standard->HUD flash. Keep the splash opaque through hydration + the
@@ -56,75 +51,33 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     return () => clearTimeout(t);
   }, []);
 
+  const showHUD = isDesktop && !standardOverride && webgl === true;
+  const stops = useMemo(() => buildStops(portfolio), [portfolio]);
+  const journalIds = useMemo(() => portfolio.journalEntries.map((j) => j.id), [portfolio.journalEntries]);
+  const journey = useJourney({ count: stops.length, enabled: showHUD, locked: activeModal != null });
+  // The active stop (driven only by scroll) decides where the camera is.
+  const zoomTarget = showHUD ? (stops[journey.activeIndex]?.zoomTarget ?? null) : null;
+
   const toggleView = () => {
     setStandardOverride((overridden) => !overridden);
-    // Standard View unmounts the 3D scene; drop any zoom/modal so no state
-    // dangles when the user toggles back to HUD.
-    setZoomTarget(null);
     setActiveModal(null);
   };
   const handleSceneFailure = () => {
     setSceneFailed(true);
     setStandardOverride(true);
-    setZoomTarget(null);
     setActiveModal(null);
   };
   const closeModal = () => setActiveModal(null);
-  // The showcase lives on the PC monitor (3D zoom) in HUD mode; anywhere else
-  // it falls back to a normal dialog.
+  // HUD: objects and nav items scroll to their stop; anything without a stop (resume, journal
+  // entries, Standard View) opens the dialog.
   const openContent = (id: string) => {
-    // In HUD mode, the showcase lives on the PC monitor and the contact screen
-    // on the phone (both 3D zooms); anywhere else they fall back to a dialog.
-    const zt =
-      id === "showcase" ? "pc" : id === "contact" ? "contact" : id === "about" ? "about" : null;
-    if (zt && showHUD) {
-      // Toggle: zoomed in on the object -> click again zooms back out (like Esc).
-      if (zoomTarget === zt) closeShowcase();
-      else setZoomTarget(zt);
-    } else setActiveModal(id);
+    const index = stopIndexForContent(stops, id, journalIds);
+    if (showHUD && index >= 0) journey.goTo(index);
+    else setActiveModal(id);
   };
-  const closeShowcase = () => {
-    setActiveModal(null);
-    setZoomTarget(null);
-  };
-
-  // Esc closes the on-monitor showcase (zoom-out) while no dialog is open.
-  // The native <dialog> handles its own Escape, so skip when one is up.
-  useEffect(() => {
-    if (!zoomTarget) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (activeModal && activeModal !== "showcase") return;
-      closeShowcase();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [zoomTarget, activeModal]);
-
-  const showHUD = isDesktop && !standardOverride && webgl === true;
-
-  // SPIKE (throwaway): scroll position -> camera stage, reusing zoomTarget.
-  // Stack/experience/journal stages have no zoom view yet.
-  useEffect(() => {
-    if (!showHUD) return;
-    let last = 0;
-    const onScroll = () => {
-      const i = Math.min(
-        SPIKE_STAGES.length - 1,
-        Math.round(window.scrollY / window.innerHeight),
-      );
-      if (i === last) return;
-      last = i;
-      setZoomTarget(SPIKE_STAGES[i]);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [showHUD]);
+  const closeShowcase = () => journey.goTo(0);
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
-  // True while the showcase is rendered on the monitor; suppresses the dialog
-  // (showcase is never a dialog in HUD mode).
-  const showcaseOnScreen = activeModal === "showcase" && zoomTarget != null;
 
   const renderModalContent = (content: ContentItem, onClose: () => void) => {
     switch (content.kind) {
@@ -163,11 +116,12 @@ export function HomeClient({ portfolio }: HomeClientProps) {
           <div
             aria-hidden
             className="pointer-events-none"
-            style={{ height: `${SPIKE_STAGES.length * 100}vh` }}
+            style={{ height: `${stops.length * 100}vh` }}
           />
           <SceneBoundary onError={handleSceneFailure}>
           <DesktopScene
             onContextLost={handleSceneFailure}
+            reducedMotion={journey.reducedMotion}
             onOpenModal={openContent}
             zoomTarget={zoomTarget}
             projects={portfolio.projects}
@@ -212,7 +166,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
         </p>
       )}
 
-      {activeContent && !showcaseOnScreen && (
+      {activeContent && (
         <Modal
           open
           onClose={closeModal}

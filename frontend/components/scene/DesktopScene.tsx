@@ -27,6 +27,8 @@ const ARRIVE_EPS = 0.005;
 interface DesktopSceneProps {
   /** Called when the WebGL context is lost so the page can fall back to Standard View. */
   onContextLost?: () => void;
+  /** Jump to each stop pose instead of flying (prefers-reduced-motion). */
+  reducedMotion?: boolean;
   /** Objects other than the PC (notebook/whiteboard/phone) open modals directly. */
   onOpenModal: (id: string) => void;
   /** "pc" while the showcase zoom is active; null in the idle desk view. */
