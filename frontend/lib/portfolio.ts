@@ -9,7 +9,7 @@ export type ContentKind =
   | "showcase"
   | "contact";
 
-export type StackCategory = "framework" | "language" | "tool" | "cloud";
+export type StackCategory = "framework" | "language" | "tool" | "cloud" | "database";
 
 export interface Experience {
   position: string;
@@ -39,6 +39,8 @@ export interface SocialItem {
 
 export interface Contact {
   email: string;
+  /** Optional scheduling link (e.g. a booking page); only https URLs are used. */
+  bookingUrl?: string;
   blurb?: string;
   socials?: SocialItem[];
 }
@@ -48,6 +50,17 @@ export interface RawImage {
   _type: "image";
   asset: { _ref: string };
   alt?: string;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface Availability {
+  isAvailable: boolean;
+  statusText?: string;
+  timezone?: string;
 }
 
 export interface ContentItem {
@@ -89,7 +102,14 @@ export interface PortfolioData {
   items: Record<string, ContentItem>;
   projects: ContentItem[];
   journalEntries: ContentItem[];
-  profile: { name: string; contact?: Contact };
+  profile: {
+    name: string;
+    contact?: Contact;
+    photo?: RawImage;
+    availability?: Availability;
+    faq?: FaqItem[];
+    resumeFileUrl?: string;
+  };
   siteConfig: SiteConfig;
 }
 
@@ -119,6 +139,10 @@ export interface PortfolioPayload {
     stack?: StackItem[];
     services?: Service[];
     contact?: Contact;
+    photo?: RawImage;
+    availability?: Availability;
+    faq?: FaqItem[];
+    resumeFileUrl?: string;
     resume?: { headline?: PortableTextBlock[]; links?: { label: string; href: string }[] };
     siteConfig?: Partial<SiteConfig>;
   };
@@ -149,6 +173,24 @@ interface RawJournalEntry {
   summary?: string;
   body?: PortableTextBlock[];
   slug?: string;
+}
+
+const isHttps = (url?: string): url is string => !!url && url.toLowerCase().startsWith("https://");
+
+/** "Hire me" target: a booking page if set (https only), else mailto, else nothing. */
+export function hireMeHref(contact?: Contact): string | undefined {
+  if (isHttps(contact?.bookingUrl)) return contact.bookingUrl;
+  return contact?.email ? `mailto:${contact.email}` : undefined;
+}
+
+/** Resume target: the uploaded file if present, else the first configured link. */
+export function resumeHref(p: { resumeFileUrl?: string; links?: { label: string; href: string }[] }): string | undefined {
+  return p.resumeFileUrl || p.links?.[0]?.href || undefined;
+}
+
+/** Heading for a stack category; unknown categories read as tools. */
+export function categoryLabel(labels: SiteConfig["categoryLabels"], category: string): string {
+  return labels[category as StackCategory] ?? labels.tool;
 }
 
 /** Portable Text → plain text, for previews and JP detection. */
@@ -187,6 +229,7 @@ export const defaultSiteConfig: SiteConfig = {
     language: "Languages",
     tool: "Tools",
     cloud: "Cloud & Infra",
+    database: "Databases",
   },
   navItems: [
     { id: "showcase", label: "Showcase" },
@@ -300,7 +343,14 @@ export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
     items,
     projects,
     journalEntries,
-    profile: { name: profile?.name ?? fallbackName, contact },
+    profile: {
+      name: profile?.name ?? fallbackName,
+      contact,
+      photo: profile?.photo,
+      availability: profile?.availability,
+      faq: profile?.faq,
+      resumeFileUrl: profile?.resumeFileUrl,
+    },
     siteConfig,
   };
 }

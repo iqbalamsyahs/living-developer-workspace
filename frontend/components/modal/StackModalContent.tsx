@@ -18,6 +18,7 @@ const CATEGORY_VARIANT: Record<StackCategory, "default" | "language" | "tool"> =
   language: "language",
   tool: "tool",
   cloud: "default",
+  database: "default",
 };
 
 const DEFAULT_LABELS: Record<StackCategory, string> = {
@@ -25,6 +26,7 @@ const DEFAULT_LABELS: Record<StackCategory, string> = {
   language: "Languages",
   tool: "Tools",
   cloud: "Cloud & Infra",
+  database: "Databases",
 };
 
 /**
