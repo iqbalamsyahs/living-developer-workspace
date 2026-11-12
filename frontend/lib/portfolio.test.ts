@@ -34,3 +34,20 @@ test("buildPortfolio tolerates an empty payload", () => {
   assert.equal(p.profile.faq, undefined);
   assert.equal(p.items.stack.stack, undefined);
 });
+
+test("hasImageAsset is false for an image with alt text but no asset", async () => {
+  const { hasImageAsset } = await import("./portfolio.ts");
+  assert.equal(hasImageAsset({ _type: "image", alt: "x" } as never), false);
+  assert.equal(hasImageAsset(undefined), false);
+  assert.equal(hasImageAsset({ _type: "image", asset: { _ref: "image-abc-1x1-png" } }), true);
+});
+
+test("hero tagline: siteConfig override beats the profile field, which beats the default", () => {
+  const profile = { _id: "profile", heroTagline: "Top level" };
+  assert.equal(buildPortfolio({ profile }).siteConfig.heroTagline, "Top level");
+  assert.equal(
+    buildPortfolio({ profile: { ...profile, siteConfig: { heroTagline: "Override" } } }).siteConfig.heroTagline,
+    "Override",
+  );
+  assert.equal(buildPortfolio({}).siteConfig.heroTagline, defaultSiteConfig.heroTagline);
+});

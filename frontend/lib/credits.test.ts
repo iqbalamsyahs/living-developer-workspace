@@ -15,3 +15,7 @@ test("formatAttribution names title, author and license", () => {
   const text = formatAttribution(c);
   for (const part of [c.title, c.author, c.license]) assert.ok(text.includes(part));
 });
+
+test("credits link to the model page, not just the author profile", () => {
+  for (const c of CREDITS) assert.match(c.sourceUrl, /\/3d-models\//, c.title);
+});

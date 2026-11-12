@@ -9,6 +9,15 @@ export function formatLocalTime(date: Date, timeZone: string): string {
   }).format(date);
 }
 
+/** Like formatLocalTime, but null for an invalid IANA zone (editor typo) instead of throwing. */
+export function tryFormatLocalTime(date: Date, timeZone: string): string | null {
+  try {
+    return formatLocalTime(date, timeZone);
+  } catch {
+    return null;
+  }
+}
+
 /** Short label for a zone: WIB for Jakarta, otherwise the city part of the IANA name. */
 export function zoneLabel(timeZone: string): string {
   return timeZone === "Asia/Jakarta" ? "WIB" : (timeZone.split("/").pop() ?? timeZone).replace(/_/g, " ");

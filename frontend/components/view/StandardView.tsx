@@ -7,13 +7,15 @@ import { TechPill } from "@/components/ui/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
 import { RichText, toPlainText } from "@/components/ui/RichText";
 import { SanityImage } from "@/components/ui/SanityImage";
-import { categoryLabel, type PortfolioData } from "@/lib/portfolio";
+import { categoryLabel, hasImageAsset, type PortfolioData } from "@/lib/portfolio";
 import type { PortableTextBlock } from "@portabletext/react";
 
 interface StandardViewProps {
   portfolio: PortfolioData;
   /** Present on desktop when the 3D HUD is the alternative view. */
   onToggleHUD?: () => void;
+  /** Resume file or first link; the button is hidden without it. */
+  resumeHref?: string;
   onOpen: (id: string) => void;
 }
 
@@ -42,7 +44,7 @@ function journalPreview(body: PortableTextBlock[]): string {
  * "Standard View" on desktop. Cards here are the 2D fallback for the future
  * 3D desk interactions.
  */
-export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewProps) {
+export function StandardView({ portfolio, onToggleHUD, onOpen, resumeHref }: StandardViewProps) {
   const { siteConfig, projects, journalEntries } = portfolio;
   const about = portfolio.items.about;
   const stackContent = portfolio.items.stack;
@@ -79,9 +81,16 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
               className="transition-transform group-hover:translate-x-0.5"
             />
           </Button>
-          <Button variant="outline" onClick={() => onOpen("resume")}>
-            {siteConfig.ctas.resume}
-          </Button>
+          {resumeHref && (
+            <a
+              href={resumeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-sm border border-primary/60 px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-ink"
+            >
+              {siteConfig.ctas.resume}
+            </a>
+          )}
         </div>
       </header>
 
@@ -95,7 +104,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
             {siteConfig.headings.about}
           </h2>
           <div className="mt-8 flex flex-col gap-4">
-            {about.photo && (
+            {hasImageAsset(about.photo) && about.photo && (
               <SanityImage
                 image={about.photo}
                 width={320}
@@ -277,7 +286,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
             FAQ
           </h2>
           <div className="mt-8 flex flex-col gap-3">
-            {portfolio.profile.faq.map((item) => (
+            {portfolio.profile.faq.filter((item) => item.question && item.answer).map((item) => (
               <details
                 key={item.question}
                 className="group rounded-md border border-primary/10 bg-surface p-5 open:border-primary/40"

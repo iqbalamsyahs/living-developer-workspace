@@ -1,6 +1,6 @@
 import { createImageUrlBuilder } from "@sanity/image-url";
 import { client } from "@/lib/sanity/client";
-import type { RawImage } from "@/lib/portfolio";
+import { hasImageAsset, type RawImage } from "@/lib/portfolio";
 
 const builder = createImageUrlBuilder(client);
 
@@ -13,7 +13,7 @@ const builder = createImageUrlBuilder(client);
  * add remotePatterns + qualities to next.config.ts at that point.
  */
 export function urlFor(src: RawImage | undefined | null) {
-  return src ? builder.image(src) : null;
+  return src && hasImageAsset(src) ? builder.image(src) : null;
 }
 
 /** Resolved CDN URL for a RawImage at a given pixel width, or null. */

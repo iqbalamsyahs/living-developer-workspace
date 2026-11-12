@@ -14,7 +14,7 @@ export const CREDITS: Credit[] = [
     title: "Modern PC Desk Setup - 3D Model",
     author: "Fahriyan Fikri Pradana",
     authorUrl: "https://sketchfab.com/fahriyanfikripradana11",
-    sourceUrl: "https://sketchfab.com/fahriyanfikripradana11",
+    sourceUrl: "https://sketchfab.com/3d-models/modern-pc-desk-setup-3d-model-a02e91614dbe4f15b667ba80244e96a9",
     license: "CC BY 4.0",
     licenseUrl: CC_BY_4,
   },

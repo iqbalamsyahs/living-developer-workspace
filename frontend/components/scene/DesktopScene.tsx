@@ -229,6 +229,14 @@ export function DesktopScene({
   onCloseShowcase,
   onContextLost,
 }: DesktopSceneProps) {
+  // R3F force-loses the context ~500ms after unmount; that is not a failure.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   const [zoomed, setZoomed] = useState(false);
   // Pixel size of the showcase panel, reported by GlassProjector (inside the
   // Canvas) from the monitor glass's world bounds projected to the viewport.
@@ -257,7 +265,11 @@ export function DesktopScene({
   return (
     <div aria-hidden className="fixed inset-0 z-[-1]">
       <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}
-        onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", () => onContextLost?.())}
+        onCreated={({ gl }) =>
+          gl.domElement.addEventListener("webglcontextlost", () => {
+            if (mountedRef.current) onContextLost?.();
+          })
+        }
       >
         {/* ── Ambient: neutral base so every material reads true ── */}
         <ambientLight intensity={0.22} color="#e6ecf4" />

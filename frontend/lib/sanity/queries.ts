@@ -9,7 +9,7 @@ export const PORTFOLIO_TAG = "portfolio-content";
 export const PORTFOLIO_QUERY = `{
   "profile": *[_type == "profile"][0]{
     photo, availability, faq, "resumeFileUrl": resume.file.asset->url,
-    _id, name, philosophy, bio, contact, resume, siteConfig,
+    _id, name, heroTagline, philosophy, bio, contact, resume, siteConfig,
     "experiences": experiences[]->{position, company, startDate, endDate, description},
     stack, services
   },

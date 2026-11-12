@@ -45,6 +45,11 @@ export interface Contact {
   socials?: SocialItem[];
 }
 
+/** True when an image field actually has an asset (an editor can save alt text alone). */
+export function hasImageAsset(img: RawImage | undefined | null): boolean {
+  return !!img?.asset?._ref;
+}
+
 /** Raw Sanity shape of an image reference (before urlFor). */
 export interface RawImage {
   _type: "image";
@@ -135,6 +140,7 @@ export interface PortfolioPayload {
   profile?: {
     _id: string;
     name?: string;
+    heroTagline?: string;
     philosophy?: string;
     bio?: PortableTextBlock[];
     experiences?: Experience[];
@@ -260,7 +266,9 @@ function mergeDeep<T>(base: T, override?: Partial<T>): T {
 }
 
 export function buildSiteConfig(raw: PortfolioPayload["profile"]): SiteConfig {
-  return mergeDeep(defaultSiteConfig, raw?.siteConfig);
+  // Precedence: siteConfig override > top-level profile.heroTagline > built-in default.
+  const base = raw?.heroTagline ? { ...defaultSiteConfig, heroTagline: raw.heroTagline } : defaultSiteConfig;
+  return mergeDeep(base, raw?.siteConfig);
 }
 
 export function buildPortfolio(payload: PortfolioPayload): PortfolioData {

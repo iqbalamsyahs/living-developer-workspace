@@ -14,6 +14,7 @@ import dynamic from "next/dynamic";
 import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useWebGL } from "@/hooks/useWebGL";
 
 // ssr:false + dynamic keeps three.js and every .glb out of the mobile bundle and the server render.
 const DesktopScene = dynamic(
@@ -35,6 +36,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // the user's choice after a manual toggle; resizing never auto-flips back.
   const [standardOverride, setStandardOverride] = useState(false);
   const [sceneFailed, setSceneFailed] = useState(false);
+  // null until probed on the client; the 3D bundle only loads once WebGL is known to work.
+  const webgl = useWebGL();
   const [activeModal, setActiveModal] = useState<string | null>(null);
   // "pc" while the showcase is shown on the monitor (3D zoom); null when the
   // showcase is closed and the camera returns to the desk. The PC model and the
@@ -98,7 +101,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [zoomTarget, activeModal]);
 
-  const showHUD = isDesktop && !standardOverride;
+  const showHUD = isDesktop && !standardOverride && webgl === true;
 
   // SPIKE (throwaway): scroll position -> camera stage, reusing zoomTarget.
   // Stack/experience/journal stages have no zoom view yet.
@@ -193,10 +196,14 @@ export function HomeClient({ portfolio }: HomeClientProps) {
           portfolio={portfolio}
           onToggleHUD={isDesktop ? toggleView : undefined}
           onOpen={openContent}
+          resumeHref={resumeHref({
+            resumeFileUrl: portfolio.profile.resumeFileUrl,
+            links: portfolio.items.resume?.links,
+          })}
         />
       )}
 
-      {sceneFailed && (
+      {sceneFailed && !showHUD && (
         <p
           role="status"
           className="fixed bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-md border border-white/10 bg-slate-900/90 px-4 py-2 text-sm text-slate-200"
