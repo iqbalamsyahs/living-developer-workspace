@@ -12,7 +12,7 @@ import { StackModalContent } from "@/components/modal/StackModalContent";
 import { ContactModalContent } from "@/components/modal/ContactModalContent";
 import dynamic from "next/dynamic";
 import { SceneBoundary } from "@/components/scene/SceneBoundary";
-import type { ContentItem, PortfolioData } from "@/lib/portfolio";
+import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // ssr:false + dynamic keeps three.js and every .glb out of the mobile bundle and the server render.
@@ -180,6 +180,12 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             onToggleStandard={toggleView}
             onOpen={openContent}
             zoomed={zoomTarget != null}
+            hireMeHref={hireMeHref(portfolio.profile.contact)}
+            resumeHref={resumeHref({
+              resumeFileUrl: portfolio.profile.resumeFileUrl,
+              links: portfolio.items.resume?.links,
+            })}
+            availability={portfolio.profile.availability}
           />
         </>
       ) : (

@@ -10,6 +10,9 @@ import {
   StackIcon,
 } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/Button";
+import { useLocalTime } from "@/hooks/useLocalTime";
+import { zoneLabel } from "@/lib/time";
+import type { Availability } from "@/lib/portfolio";
 
 interface HUDProps {
   brand: string;
@@ -18,6 +21,28 @@ interface HUDProps {
   onOpen: (id: string) => void;
   /** True while the showcase is zoomed on the monitor; hides the orbit hint. */
   zoomed: boolean;
+  hireMeHref?: string;
+  resumeHref?: string;
+  availability?: Availability;
+}
+
+const LINK_BASE =
+  "inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium transition-colors active:translate-y-[1px]";
+
+function AvailabilityBadge({ availability }: { availability: Availability }) {
+  const zone = availability.timezone || "Asia/Jakarta";
+  const time = useLocalTime(zone);
+  return (
+    <p className="flex items-center gap-2 font-mono text-xs text-text-secondary">
+      <span aria-hidden className="h-2 w-2 rounded-full bg-primary" />
+      <span>{availability.statusText || "Available for work"}</span>
+      {time && (
+        <span className="tabular-nums">
+          · {zoneLabel(zone)} {time}
+        </span>
+      )}
+    </p>
+  );
 }
 
 /** Icon per content id; anything unknown falls back to a generic square. */
@@ -36,7 +61,16 @@ const FALLBACK_ICON = DesktopIcon;
  * below this in the future). The root is pointer-events-none so the canvas
  * underneath stays interactive; only the controls opt back in.
  */
-export function HUD({ brand, navItems, onToggleStandard, onOpen, zoomed }: HUDProps) {
+export function HUD({
+  brand,
+  navItems,
+  onToggleStandard,
+  onOpen,
+  zoomed,
+  hireMeHref,
+  resumeHref,
+  availability,
+}: HUDProps) {
   return (
     <div className="pointer-events-none fixed inset-0 z-10">
       {/* Top-left name mark */}
@@ -51,7 +85,27 @@ export function HUD({ brand, navItems, onToggleStandard, onOpen, zoomed }: HUDPr
       </div>
 
       {/* Top-right view toggle */}
-      <div className="pointer-events-auto absolute right-6 top-6">
+      <div className="pointer-events-auto absolute right-6 top-6 flex items-center gap-3">
+        {availability?.isAvailable && <AvailabilityBadge availability={availability} />}
+        {resumeHref && (
+          <a
+            href={resumeHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${LINK_BASE} text-text-secondary hover:bg-surface hover:text-text-primary`}
+          >
+            Resume
+          </a>
+        )}
+        {hireMeHref && (
+          <a
+            href={hireMeHref}
+            {...(hireMeHref.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            className={`${LINK_BASE} bg-primary text-primary-ink hover:bg-primary/90`}
+          >
+            Hire me
+          </a>
+        )}
         <Button variant="outline" size="sm" onClick={onToggleStandard}>
           Standard View
         </Button>
