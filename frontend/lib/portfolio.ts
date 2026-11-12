@@ -84,6 +84,8 @@ export interface ContentItem {
   summary?: string;
   body: PortableTextBlock[];
   links?: { label: string; href: string }[];
+  /** about only: profile photo. */
+  photo?: RawImage;
   /** about only: one-line working philosophy. */
   philosophy?: string;
   /** about only: career history. */
@@ -299,6 +301,7 @@ export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
     body: profile?.bio ?? [],
     philosophy: profile?.philosophy,
     experiences: profile?.experiences,
+    photo: profile?.photo,
   };
   const stack: ContentItem = {
     id: "stack",

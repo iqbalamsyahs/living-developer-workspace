@@ -7,7 +7,7 @@ import { TechPill } from "@/components/ui/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
 import { RichText, toPlainText } from "@/components/ui/RichText";
 import { SanityImage } from "@/components/ui/SanityImage";
-import type { PortfolioData } from "@/lib/portfolio";
+import { categoryLabel, type PortfolioData } from "@/lib/portfolio";
 import type { PortableTextBlock } from "@portabletext/react";
 
 interface StandardViewProps {
@@ -95,6 +95,15 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
             {siteConfig.headings.about}
           </h2>
           <div className="mt-8 flex flex-col gap-4">
+            {about.photo && (
+              <SanityImage
+                image={about.photo}
+                width={320}
+                alt={about.photo.alt}
+                aspect="1/1"
+                className="h-32 w-32 rounded-md border border-primary/10"
+              />
+            )}
             {about.body.length > 0 && (
               <RichText value={about.body} />
             )}
@@ -129,7 +138,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
               (category) => (
                 <div key={category}>
                   <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-text-secondary">
-                    {siteConfig.categoryLabels[category]}
+                    {categoryLabel(siteConfig.categoryLabels, category)}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {stackContent
@@ -146,8 +155,17 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
               ),
             )}
           </div>
+        </section>
+      )}
+
+      {/* Services */}
+      {stackContent?.services && stackContent.services.length > 0 && (
+        <section aria-labelledby="services-heading" className="py-16">
+          <h2 id="services-heading" className="font-display text-2xl text-text-primary">
+            Services
+          </h2>
           {stackContent.services && stackContent.services.length > 0 && (
-            <div className="mt-10 grid gap-4 md:grid-cols-2">
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
               {stackContent.services.map((service) => (
                 <article
                   key={service.name}
@@ -251,6 +269,30 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
           })}
         </div>
       </section>
+
+      {/* FAQ */}
+      {portfolio.profile.faq && portfolio.profile.faq.length > 0 && (
+        <section aria-labelledby="faq-heading" className="py-16">
+          <h2 id="faq-heading" className="font-display text-2xl text-text-primary">
+            FAQ
+          </h2>
+          <div className="mt-8 flex flex-col gap-3">
+            {portfolio.profile.faq.map((item) => (
+              <details
+                key={item.question}
+                className="group rounded-md border border-primary/10 bg-surface p-5 open:border-primary/40"
+              >
+                <summary className="cursor-pointer font-display text-sm text-text-primary">
+                  {item.question}
+                </summary>
+                <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
+                  {item.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Contact */}
       <section aria-labelledby="contact-heading" className="py-16">

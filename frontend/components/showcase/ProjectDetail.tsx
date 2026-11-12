@@ -26,8 +26,8 @@ function pillVariant(label: string): "default" | "language" | "tool" {
 
 /** Full project gallery: coverImage (or gallery[0]) plus any gallery shots. */
 function projectImages(project: ContentItem): RawImage[] {
-  const images = (project.gallery ?? []).filter((img) => img.asset._ref);
-  if (project.coverImage && project.coverImage.asset._ref) {
+  const images = (project.gallery ?? []).filter((img) => img.asset?._ref);
+  if (project.coverImage && project.coverImage.asset?._ref) {
     images.unshift(project.coverImage);
   }
   return images;
