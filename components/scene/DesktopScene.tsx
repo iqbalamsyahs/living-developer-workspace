@@ -7,6 +7,7 @@ import { MathUtils, Vector3 } from "three";
 import { SceneModel, type SceneModelLayout } from "./SceneModel";
 import { ShowcaseScreen } from "./ShowcaseScreen";
 import { ContactScreen } from "./ContactScreen";
+import { AboutScreen } from "./AboutScreen";
 import type { ContentItem } from "@/lib/portfolio";
 
 // Calibration flag from .env.local (NEXT_PUBLIC_ is inlined into the client
@@ -17,9 +18,8 @@ const DEBUG = process.env.NEXT_PUBLIC_DEBUG_SCENE === "true";
 // - desk: origin sits on the floor, top surface at y=0.942, center x=0.242
 // - monitor: base at local y=0, centered on desk center -> y = 0.942; rotated Y 90deg
 //   and scaled 1.7x per user request
-// - notebook: geometry exported with a ~1.5M-unit offset + ~1.1M span, so it is
-//   recentered via position offset and scaled to ~0.36 wide; rotated Y 180deg so the
-//   spine sits at the back, placed at the desk's left-front
+// - book: open-book GLTF (CC-BY-4.0, Zayfert1999); Rz(90°) lays it flat,
+//   scale 0.196 → ~0.36 (spine) x ~0.507 (span) on the desk, left-front
 // - whiteboard: face lies in the Y-Z plane, rotated Y 180deg per user request
 const MODEL_LAYOUT: SceneModelLayout[] = [
   {
@@ -58,13 +58,22 @@ const MODEL_LAYOUT: SceneModelLayout[] = [
     rotation: [0, 0, 0],
     scale: [1, 1, 1],
   },
+  // Open book ("Simple animated book" by Zayfert1999, Sketchfab, CC-BY-4.0).
+  // Replaces the old closed notebook: the open book IS the About surface. Rest
+  // pose is already an open book (skinned mesh, no useful animation clip), so it
+  // is rendered static. Rz(90°) lays it flat on the desk (page faces +Y); the
+  // scene-root skinned bounds are x[-0.125,0.125] y[-0.014,1.821] z[-1.294,1.294],
+  // so at scale 0.196 the flat book spans x[-0.357,0.003] (spine, ~0.36),
+  // y[-0.0245,0.0245] (thin), z[-0.2536,0.2536] (opening, ~0.507); page centers
+  // sit at local (x=-0.177, y=0.0245, z=±0.1267). Redistribute on the desk with
+  // NEXT_PUBLIC_DEBUG_SCENE=true.
   {
-    key: "notebook",
-    url: "/glb/notebook.glb",
+    key: "book",
+    url: "/animated_book/scene.gltf",
     id: "about",
-    position: [0.9034, 0.9366, 0.1812],
-    rotation: [0, Math.PI / 9, 0],
-    scale: [3.2145e-7, 3.2145e-7, 3.2145e-7],
+    position: [0.727, 0.9665, 0.78],
+    rotation: [0, 5, Math.PI / 2],
+    scale: [0.13, 0.13, 0.13],
   },
   {
     key: "whiteboard",
@@ -117,6 +126,21 @@ const ZOOM_VIEWS: Record<
     camDir: [0, 1, 0],
     camUp: [-1, 0, 0],
   },
+  // Open book (see SCREENS.about): the pages lie flat (Rz 90° lays the
+  // broad face horizontal), and the MODEL_LAYOUT yaw (5 rad about Y) spins the
+  // book on the desk, so camDir [0,1,0] still looks straight down the page
+  // normal (+Y world). camUp is the horizontal projection of the book's spine
+  // (its height axis after the transform) so the page content reads upright
+  // instead of rotated. screenOffset = page top-center minus the book group
+  // origin (from SCREENS.about derivation): [0.727,0.9665,0.78] + [-0.0332,
+  // 0.0163,-0.1122] = [0.6938,0.9828,0.6678]. camDist is a starting estimate;
+  // tune with NEXT_PUBLIC_DEBUG_SCENE=true.
+  about: {
+    screenOffset: [-0.0332, 0.0163, -0.1122],
+    camDist: 0.5,
+    camDir: [0, 1, 0],
+    camUp: [-0.2837, 0, -0.9589],
+  },
 };
 
 const DEFAULT_TARGET: [number, number, number] = [0.25, 0.5, 0];
@@ -157,6 +181,22 @@ const SCREENS: Record<
     br: [1.4484, 0.95, -0.622],
     tl: [1.2094, 0.95, -0.7532],
   },
+  // Open book (MODEL_LAYOUT pos [0.727,0.9665,0.78], Rz 90° + yaw 5, scale
+  // 0.13): pages lie flat (broad face → +Y), spun on the desk by the yaw. These
+  // are the world corners of the page top surface (the +X broad face of the raw
+  // bbox, taken at height y=0.9 and mid-spread z=0 for the center, and the raw
+  // face corners for bl/br/tl), computed through the group transform:
+  //   pageTopCenter (0.6938, 0.9828, 0.6678)
+  //   bl (0.8887, 0.9828, 0.734)  br (0.5662, 0.9828, 0.8294)
+  //   tl (0.8211, 0.9828, 0.5053)
+  // All at world y ≈ 0.9828 (the page top). The AboutScreen Html is sized in
+  // world units (transform mode), so these corners only gate visibility via
+  // GlassProjector's screenSize.w > 0 check.
+  about: {
+    bl: [0.8887, 0.9828, 0.734],
+    br: [0.5662, 0.9828, 0.8294],
+    tl: [0.8211, 0.9828, 0.5053],
+  },
 };
 const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
 const ARRIVE_EPS = 0.005;
@@ -170,6 +210,8 @@ interface DesktopSceneProps {
   showcaseContent?: ContentItem;
   /** Contact item rendered on the phone screen while its zoom is active. */
   contactContent?: ContentItem;
+  /** About item rendered as an open book on the notebook while its zoom is active. */
+  aboutContent?: ContentItem;
   onCloseShowcase: () => void;
 }
 
@@ -358,6 +400,7 @@ export function DesktopScene({
   projects,
   showcaseContent,
   contactContent,
+  aboutContent,
   onCloseShowcase,
 }: DesktopSceneProps) {
   const [zoomed, setZoomed] = useState(false);
@@ -457,6 +500,16 @@ export function DesktopScene({
           />
         )}
 
+        {zoomed && zoomTarget === "about" && aboutContent && screenSize.w > 0 && (
+          <AboutScreen
+            position={zoomView.lookTarget.toArray() as [number, number, number]}
+            widthPx={screenSize.w}
+            heightPx={screenSize.h}
+            content={aboutContent}
+            onClose={onCloseShowcase}
+          />
+        )}
+
         {/* Grounds the scene; renders its own depth pass, no renderer shadows needed */}
         <ContactShadows
           position={[0, 0.001, 0]}
@@ -490,6 +543,7 @@ export function DesktopScene({
         <OrbitControls
           makeDefault
           enablePan={false}
+          enableZoom={false}
           minDistance={DEFAULT_CLAMPS.minDistance}
           maxDistance={DEFAULT_CLAMPS.maxDistance}
           minPolarAngle={Math.PI / 4}

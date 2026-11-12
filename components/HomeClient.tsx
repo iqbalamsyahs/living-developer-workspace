@@ -16,6 +16,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // z-scale: 3D canvas -1 | HUD overlay 10 | modal dialog top-layer.
 
+const SPIKE_STAGES: (string | null)[] = [null, "about", "pc", "contact"];
+
 interface HomeClientProps {
   portfolio: PortfolioData;
 }
@@ -56,7 +58,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   const openContent = (id: string) => {
     // In HUD mode, the showcase lives on the PC monitor and the contact screen
     // on the phone (both 3D zooms); anywhere else they fall back to a dialog.
-    const zt = id === "showcase" ? "pc" : id === "contact" ? "contact" : null;
+    const zt =
+      id === "showcase" ? "pc" : id === "contact" ? "contact" : id === "about" ? "about" : null;
     if (zt && showHUD) {
       // Toggle: zoomed in on the object -> click again zooms back out (like Esc).
       if (zoomTarget === zt) closeShowcase();
@@ -82,6 +85,25 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   }, [zoomTarget, activeModal]);
 
   const showHUD = isDesktop && !standardOverride;
+
+  // SPIKE (throwaway): scroll position -> camera stage, reusing zoomTarget.
+  // Stack/experience/journal stages have no zoom view yet.
+  useEffect(() => {
+    if (!showHUD) return;
+    let last = 0;
+    const onScroll = () => {
+      const i = Math.min(
+        SPIKE_STAGES.length - 1,
+        Math.round(window.scrollY / window.innerHeight),
+      );
+      if (i === last) return;
+      last = i;
+      setZoomTarget(SPIKE_STAGES[i]);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [showHUD]);
+
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
   // True while the showcase is rendered on the monitor; suppresses the dialog
   // (showcase is never a dialog in HUD mode).
@@ -121,12 +143,18 @@ export function HomeClient({ portfolio }: HomeClientProps) {
 
       {showHUD ? (
         <>
+          <div
+            aria-hidden
+            className="pointer-events-none"
+            style={{ height: `${SPIKE_STAGES.length * 100}vh` }}
+          />
           <DesktopScene
             onOpenModal={openContent}
             zoomTarget={zoomTarget}
             projects={portfolio.projects}
             showcaseContent={portfolio.items.showcase}
             contactContent={portfolio.items.contact}
+            aboutContent={portfolio.items.about}
             onCloseShowcase={closeShowcase}
           />
           <HUD

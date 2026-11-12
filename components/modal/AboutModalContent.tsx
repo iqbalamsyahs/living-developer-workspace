@@ -15,7 +15,7 @@ const JP_CHARS = /[぀-ヿ㐀-䶿一-鿿]/;
 
 /**
  * About & Experience modal: narrative bio, a one-line philosophy, then the
- * career timeline. Opened by the notebook on the desk.
+ * career timeline. Opened by the open book on the desk.
  */
 export function AboutModalContent({ content, onClose }: AboutModalContentProps) {
   const hasJapanese = JP_CHARS.test(toPlainText(content.body));
