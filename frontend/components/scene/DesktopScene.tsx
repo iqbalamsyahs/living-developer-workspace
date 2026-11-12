@@ -18,11 +18,15 @@ const DEBUG = process.env.NEXT_PUBLIC_DEBUG_SCENE === "true";
 // drei OrbitControls enforces these in its own useFrame update() (priority -1).
 // CameraRig mirrors them onto the instance the frame it re-enables controls, so
 // there is no one-frame snap while React catches up with the `zoomed` state.
-const DEFAULT_CLAMPS = { minDistance: 1.5, maxDistance: 6, maxPolarAngle: Math.PI / 2.1 };
+const DEFAULT_CLAMPS = { minDistance: 1.5, maxDistance: 7, maxPolarAngle: Math.PI / 2.1 };
 const ZOOMED_CLAMPS = { minDistance: 0.5, maxDistance: 2.5, maxPolarAngle: Math.PI / 2 };
 
 const DAMP_LAMBDA = 6; // ~1s ease-out for a 0.9-unit flight
 const ARRIVE_EPS = 0.005;
+// Limited free rotation at the overview pose: a little, then it eases back.
+const AZIMUTH_RANGE = 0.26;
+const POLAR_RANGE = 0.15;
+const RETURN_DELAY_MS = 300;
 
 interface DesktopSceneProps {
   /** Called when the WebGL context is lost so the page can fall back to Standard View. */
@@ -110,12 +114,14 @@ function CameraRig({
   zoomPos,
   zoomLookTarget,
   zoomUp,
+  reducedMotion,
   onZoomed,
 }: {
   zoomTarget: string | null;
   zoomPos: Vector3;
   zoomLookTarget: Vector3;
   zoomUp: [number, number, number];
+  reducedMotion: boolean;
   onZoomed: (zoomed: boolean) => void;
 }) {
   const camera = useThree((s) => s.camera);
@@ -129,13 +135,55 @@ function CameraRig({
     if (controls && !ocRef.current) ocRef.current = controls;
   }, [controls]);
 
-  const restore = useRef<{ pos: Vector3; target: Vector3 } | null>(null);
   const anim = useRef<{
     from: Vector3;
     fromTarget: Vector3;
     to: Vector3;
     toTarget: Vector3;
   } | null>(null);
+  // Overview pose, captured once on the first frame; every zoom-out and every spring-back lands here.
+  const restore = useRef<{ pos: Vector3; target: Vector3 } | null>(null);
+  const reducedRef = useRef(reducedMotion);
+  useEffect(() => {
+    reducedRef.current = reducedMotion;
+  }, [reducedMotion]);
+
+  // Spring back to the overview pose shortly after the user releases a drag.
+  useEffect(() => {
+    if (!controls) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onEnd = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const home = restore.current;
+        if (!home || !ocRef.current?.enabled) return;
+        anim.current = {
+          from: camera.position.clone(),
+          fromTarget: ocRef.current.target.clone(),
+          to: home.pos,
+          toTarget: home.target,
+        };
+        ocRef.current.enabled = false;
+      }, RETURN_DELAY_MS);
+    };
+    controls.addEventListener("end", onEnd);
+    return () => {
+      clearTimeout(timer);
+      controls.removeEventListener("end", onEnd);
+    };
+  }, [controls, camera]);
+
+  const limitsSet = useRef(false);
+  const lockRotationAroundPose = (oc: ControlsImpl) => {
+    // getAzimuthalAngle/getPolarAngle report the last update(); refresh so they match the camera we just placed.
+    oc.update();
+    const az = oc.getAzimuthalAngle();
+    const pol = oc.getPolarAngle();
+    oc.minAzimuthAngle = az - AZIMUTH_RANGE;
+    oc.maxAzimuthAngle = az + AZIMUTH_RANGE;
+    oc.minPolarAngle = Math.max(0, pol - POLAR_RANGE);
+    oc.maxPolarAngle = Math.min(DEFAULT_CLAMPS.maxPolarAngle, pol + POLAR_RANGE);
+  };
   // Track previous zoomTarget inside useFrame to avoid useEffect timing gaps.
   const prevZt = useRef<string | null>(null);
 
@@ -143,21 +191,20 @@ function CameraRig({
     const oc = ocRef.current;
     if (!oc) return;
 
+    if (!restore.current) {
+      restore.current = { pos: camera.position.clone(), target: oc.target.clone() };
+    }
+    if (!limitsSet.current) {
+      lockRotationAroundPose(oc);
+      limitsSet.current = true;
+    }
+
     // --- Detect zoomTarget transition on the first frame it changes ---
     if (zoomTarget !== prevZt.current) {
-      const prev = prevZt.current;
       prevZt.current = zoomTarget;
       if (zoomTarget) {
-        // Zoom-in: capture the restore pose only when coming from the idle
-        // desk view. A zoom → zoom transition (pc → contact) must NOT
-        // overwrite it — otherwise closing the second zoom flies back to the
-        // first zoom instead of the desk.
-        if (prev == null) {
-          restore.current = {
-            pos: camera.position.clone(),
-            target: oc.target.clone(),
-          };
-        }
+        // Zoom-in: the overview pose was captured once on the first frame, so a
+        // zoom → zoom transition (about → stack) still returns to the desk.
         anim.current = {
           from: camera.position.clone(),
           fromTarget: oc.target.clone(),
@@ -181,6 +228,10 @@ function CameraRig({
     const a = anim.current;
     if (!a) return;
     const pos = camera.position;
+    if (reducedRef.current) {
+      pos.copy(a.to);
+      oc.target.copy(a.toTarget);
+    }
     pos.set(
       MathUtils.damp(pos.x, a.to.x, DAMP_LAMBDA, delta),
       MathUtils.damp(pos.y, a.to.y, DAMP_LAMBDA, delta),
@@ -206,6 +257,7 @@ function CameraRig({
       oc.minDistance = clamps.minDistance;
       oc.maxDistance = clamps.maxDistance;
       oc.maxPolarAngle = clamps.maxPolarAngle;
+      if (zoomTarget == null) lockRotationAroundPose(oc);
       // Locked while inspecting the monitor: no drag/rotate or wheel-zoom until
       // the user exits (re-click or Esc), which re-enables controls on the way out.
       oc.enabled = zoomTarget == null;
@@ -230,6 +282,7 @@ export function DesktopScene({
   aboutContent,
   onCloseShowcase,
   onContextLost,
+  reducedMotion = false,
 }: DesktopSceneProps) {
   // R3F force-loses the context ~500ms after unmount; that is not a failure.
   const mountedRef = useRef(true);
@@ -265,7 +318,7 @@ export function DesktopScene({
   }, [zoomTarget]);
 
   return (
-    <div aria-hidden className="fixed inset-0 z-[-1]">
+    <div aria-hidden className="fixed inset-0 z-0">
       <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}
         onCreated={({ gl }) =>
           gl.domElement.addEventListener("webglcontextlost", () => {
@@ -313,6 +366,7 @@ export function DesktopScene({
           zoomPos={zoomView.camPos}
           zoomLookTarget={zoomView.lookTarget}
           zoomUp={zoomView.camUp}
+          reducedMotion={reducedMotion}
           onZoomed={setZoomed}
         />
 
@@ -386,6 +440,7 @@ export function DesktopScene({
           makeDefault
           enablePan={false}
           enableZoom={false}
+          enableDamping={false}
           minDistance={DEFAULT_CLAMPS.minDistance}
           maxDistance={DEFAULT_CLAMPS.maxDistance}
           minPolarAngle={Math.PI / 4}

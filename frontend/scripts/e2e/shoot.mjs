@@ -2,7 +2,7 @@
 // Usage: node scripts/e2e/shoot.mjs <outDir> [--w 1440] [--h 900] [--reduced-motion] [--url http://localhost:3000/] <step>...
 // Step: `action[:arg]` or `name:action[:arg]`. Actions:
 //   wait:<ms>  scroll:<px> (window.scrollTo)  wheel:<px> (real wheel event)
-//   click:<x>,<y>  key:<Key>  eval:<js>  log  shot (writes <outDir>/<name>.png)
+//   click:<x>,<y>  drag:<x1>,<y1>,<x2>,<y2> (stays pressed until `release`)  release  key:<Key>  eval:<js>  log  shot (writes <outDir>/<name>.png)
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -21,7 +21,7 @@ const [outDir, ...steps] = positional;
 if (!outDir) throw new Error("usage: shoot.mjs <outDir> [options] <step>...");
 mkdirSync(outDir, { recursive: true });
 
-const ACTIONS = ["wait", "scroll", "wheel", "click", "key", "eval", "log", "shot"];
+const ACTIONS = ["wait", "scroll", "wheel", "click", "drag", "release", "key", "eval", "log", "shot"];
 const CHROME = process.env.CHROME_PATH ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const PORT = 9400 + Math.floor(Math.random() * 400);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -43,6 +43,7 @@ try {
   let id = 0;
   const pending = new Map();
   let glb = 0;
+  let lastDrag = { x: 0, y: 0 };
   ws.onmessage = (m) => {
     const d = JSON.parse(m.data);
     if (d.method === "Network.requestWillBeSent" && d.params.request.url.includes(".glb")) glb++;
@@ -69,6 +70,14 @@ try {
     else if (action === "click") {
       const [x, y] = arg.split(",").map(Number);
       for (const type of ["mouseMoved", "mousePressed", "mouseReleased"]) await send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 });
+    } else if (action === "drag") {
+      const [x1, y1, x2, y2] = arg.split(",").map(Number);
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: x1, y: y1 });
+      await send("Input.dispatchMouseEvent", { type: "mousePressed", x: x1, y: y1, button: "left", buttons: 1, clickCount: 1 });
+      for (let i = 1; i <= 10; i++) await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: x1 + ((x2 - x1) * i) / 10, y: y1 + ((y2 - y1) * i) / 10, button: "left", buttons: 1 });
+      lastDrag = { x: x2, y: y2 };
+    } else if (action === "release") {
+      await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: lastDrag.x, y: lastDrag.y, button: "left", clickCount: 1 });
     } else if (action === "key") {
       for (const type of ["keyDown", "keyUp"]) await send("Input.dispatchKeyEvent", { type, key: arg, code: arg });
     } else if (action === "eval") console.log(name, "=>", JSON.stringify(await evaluate(arg)));
