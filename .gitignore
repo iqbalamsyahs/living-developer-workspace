@@ -1,0 +1,10 @@
+# Raw downloaded 3D sources (large, third-party licensed)
+/_assets/
+
+# Local tooling
+/.claude/
+/.agents/
+/.openidea/
+.env*
+.DS_Store
+node_modules/
