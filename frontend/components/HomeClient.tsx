@@ -9,10 +9,6 @@ import { SplashScreen } from "@/components/view/SplashScreen";
 import { Modal } from "@/components/ui/Modal";
 import { ModalContent } from "@/components/modal/ModalContent";
 import { ProjectModalContent } from "@/components/modal/ProjectModalContent";
-import { AboutModalContent } from "@/components/modal/AboutModalContent";
-import { StackModalContent } from "@/components/modal/StackModalContent";
-import { ContactModalContent } from "@/components/modal/ContactModalContent";
-import { ShowcaseModalContent } from "@/components/modal/ShowcaseModalContent";
 import dynamic from "next/dynamic";
 import { SceneBoundary } from "@/components/scene/SceneBoundary";
 import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
@@ -56,6 +52,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
 
   const showHUD = isDesktop && !standardOverride && webgl === true;
   const [focus, setFocus] = useState<RoomId | null>(null);
+  // Leaving the HUD (resize, toggle) drops the open panel so it can't resurface later.
+  if (!showHUD && focus != null) setFocus(null);
   const active = useMemo(() => activeRoomIds(portfolio), [portfolio]);
   const nav = useMemo(() => active.map((id) => ({ id, label: ROOM_LABELS[id] })), [active]);
   const reducedMotion = useReducedMotion();
@@ -92,35 +90,12 @@ export function HomeClient({ portfolio }: HomeClientProps) {
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
 
-  const renderModalContent = (content: ContentItem, onClose: () => void) => {
-    switch (content.kind) {
-      case "about":
-        return <AboutModalContent content={content} onClose={onClose} />;
-      case "stack":
-        return (
-          <StackModalContent
-            content={content}
-            categoryLabels={portfolio.siteConfig.categoryLabels}
-            onClose={onClose}
-          />
-        );
-      case "contact":
-        return <ContactModalContent content={content} onClose={onClose} />;
-      case "showcase":
-        return (
-          <ShowcaseModalContent
-            content={content}
-            projects={portfolio.projects}
-            onOpen={setActiveModal}
-            onClose={onClose}
-          />
-        );
-      case "project":
-        return <ProjectModalContent content={content} onClose={onClose} />;
-      default:
-        return <ModalContent content={content} onClose={onClose} />;
-    }
-  };
+  const renderModalContent = (content: ContentItem, onClose: () => void) =>
+    content.kind === "project" ? (
+      <ProjectModalContent content={content} onClose={onClose} />
+    ) : (
+      <ModalContent content={content} onClose={onClose} />
+    );
 
   return (
     <>
@@ -153,6 +128,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             openId={focus}
             onToggleStandard={toggleView}
             onOpen={setFocus}
+            onClose={closePanel}
             hireMeHref={hireMeHref(portfolio.profile.contact)}
             resumeHref={resume}
             availability={portfolio.profile.availability}

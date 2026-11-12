@@ -22,6 +22,8 @@ interface HUDProps {
   panelOpen: boolean;
   onToggleStandard: () => void;
   onOpen: (id: RoomId) => void;
+  /** Closes the room panel; a second press on the pressed nav button routes here. */
+  onClose: () => void;
   /** Room whose panel is open, for aria-pressed. */
   openId?: RoomId | null;
   hireMeHref?: string;
@@ -61,8 +63,7 @@ const ICONS: Record<RoomId, typeof DesktopIcon> = {
 const LEFT_OF_PANEL = "right-[calc(min(28rem,50vw)+1.5rem)]";
 
 /**
- * Desktop HUD overlaying the 3D canvas (z-10; canvas renders at z-0
- * below this in the future). The root is pointer-events-none so the canvas
+ * Desktop HUD overlaying the 3D canvas (HUD z-10, canvas z-0). The root is pointer-events-none so the canvas
  * underneath stays interactive; only the controls opt back in.
  */
 export function HUD({
@@ -71,6 +72,7 @@ export function HUD({
   panelOpen,
   onToggleStandard,
   onOpen,
+  onClose,
   openId,
   hireMeHref,
   resumeHref,
@@ -78,47 +80,52 @@ export function HUD({
 }: HUDProps) {
   return (
     <div className="pointer-events-none fixed inset-0 z-10">
-      {/* Top-left name mark */}
-      <div className="pointer-events-auto absolute left-6 top-6 flex items-center gap-2 rounded-sm bg-surface/90 px-3 py-2 backdrop-blur">
-        <span
-          aria-hidden="true"
-          className="h-2 w-2 bg-primary"
-        />
-        <span className="font-display text-lg leading-none text-text-primary">
-          {brand}
-        </span>
-      </div>
+      {/* Brand left, actions right in one row bounded by the viewport (or the open panel); actions wrap instead of overlapping the brand. */}
+      <div className={`absolute left-6 top-6 flex items-start justify-between gap-3 ${panelOpen ? LEFT_OF_PANEL : "right-6"}`}>
+        <div className="pointer-events-auto flex shrink-0 items-center gap-2 rounded-sm bg-surface/90 px-3 py-2 backdrop-blur">
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 bg-primary"
+          />
+          <span className="font-display text-lg leading-none text-text-primary">
+            {brand}
+          </span>
+        </div>
 
-      {/* Top-right actions; shift left of the room panel so its close button stays clear */}
-      <div className={`pointer-events-auto absolute top-6 flex items-center gap-3 rounded-sm bg-surface/90 px-2 py-1 backdrop-blur ${panelOpen ? LEFT_OF_PANEL : "right-6"}`}>
-        {availability?.isAvailable && !panelOpen && <AvailabilityBadge availability={availability} />}
-        {resumeHref && (
-          <a
-            href={resumeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${LINK_BASE} text-text-secondary hover:bg-surface hover:text-text-primary`}
-          >
-            Resume
-          </a>
-        )}
-        {nav.some((n) => n.id === "contact") && (
-          <Button variant="ghost" size="sm" onClick={() => onOpen("contact")}>
-            Contact
+        <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-3 rounded-sm bg-surface/90 px-2 py-1 backdrop-blur">
+          {availability?.isAvailable && !panelOpen && (
+            <div className="max-xl:hidden">
+              <AvailabilityBadge availability={availability} />
+            </div>
+          )}
+          {resumeHref && (
+            <a
+              href={resumeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${LINK_BASE} text-text-secondary hover:bg-surface hover:text-text-primary`}
+            >
+              Resume
+            </a>
+          )}
+          {nav.some((n) => n.id === "contact") && (
+            <Button variant="ghost" size="sm" onClick={() => onOpen("contact")}>
+              Contact
+            </Button>
+          )}
+          {hireMeHref && (
+            <a
+              href={hireMeHref}
+              {...(hireMeHref.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className={`${LINK_BASE} bg-primary text-primary-ink hover:bg-primary/90`}
+            >
+              Hire me
+            </a>
+          )}
+          <Button variant="outline" size="sm" onClick={onToggleStandard}>
+            Standard View
           </Button>
-        )}
-        {hireMeHref && (
-          <a
-            href={hireMeHref}
-            {...(hireMeHref.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className={`${LINK_BASE} bg-primary text-primary-ink hover:bg-primary/90`}
-          >
-            Hire me
-          </a>
-        )}
-        <Button variant="outline" size="sm" onClick={onToggleStandard}>
-          Standard View
-        </Button>
+        </div>
       </div>
 
 
@@ -143,7 +150,7 @@ export function HUD({
               aria-label={item.label}
               aria-pressed={openId === item.id}
               data-room={item.id}
-              onClick={() => onOpen(item.id)}
+              onClick={() => (openId === item.id ? onClose() : onOpen(item.id))}
               className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
             >
               <Icon width={18} height={18} aria-hidden="true" />

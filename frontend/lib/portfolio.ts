@@ -132,7 +132,6 @@ export interface SiteConfig {
   >;
   ctas: Record<"caseStudy" | "resume" | "readCaseStudy" | "email", string>;
   categoryLabels: Record<StackCategory, string>;
-  navItems: { id: string; label: string }[];
 }
 
 /** Raw Sanity shape returned by PORTFOLIO_QUERY. */
@@ -239,14 +238,6 @@ export const defaultSiteConfig: SiteConfig = {
     cloud: "Cloud & Infra",
     database: "Databases",
   },
-  navItems: [
-    { id: "showcase", label: "Showcase" },
-    { id: "about", label: "About" },
-    { id: "stack", label: "Stack" },
-    { id: "contact", label: "Contact" },
-    { id: "jrn-japanese", label: "Learning journal" },
-    { id: "resume", label: "Resume" },
-  ],
 };
 
 /** Deep-merge only the top-level keys the editor actually set; drop empties. */

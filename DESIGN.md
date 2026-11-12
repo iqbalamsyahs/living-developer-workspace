@@ -42,7 +42,7 @@ Instead of standard drop shadows, we use **glows** (colored box-shadows) to repr
 1. **Boot Splash:** A full-screen, opaque CSS splash (brand mark + tagline) covering first paint and hydration. *Justification:* Prevents a blank screen and hides the server-rendered Standard View flipping to the 3D HUD on desktop.
 2. **The Bedroom (3D Hero - Desktop Only):** The primary view. A code-built night bedroom you free-orbit, with an intro card over it and a HUD overlay.
 3. **Room Panel (Slide-over):** A fixed right-hand panel that opens when a room object is clicked. Houses that object's Sanity content (About, Projects, Stack, Experience, Journal, Contact).
-4. **Content Modal (Overlay):** A slide-over/centered dialog, opened from the panel (project or journal detail) or directly from the HUD/Standard View (About, Stack, Contact, Showcase index). Stacks above the panel.
+4. **Content Modal (Overlay):** A slide-over/centered dialog, opened for project or journal detail, from the room panel or the Standard View. Stacks above the panel.
 5. **Standard View (2D Fallback - Mobile & Opt-in):** A clean, linear feed of about, stack, projects, and journal, with small room-object icons beside each section heading. *Justification:* Ensures recruiters on mobile or older devices get immediate access to the resume and contact info.
 
 ## 5. User Flows
