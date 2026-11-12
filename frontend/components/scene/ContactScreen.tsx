@@ -118,7 +118,7 @@ export function ContactScreen({
     >
       <div
         style={{ width: widthPx * GLASS_SCALE, height: heightPx * GLASS_SCALE }}
-        className="flex flex-col overflow-hidden bg-transparent"
+        className="pointer-events-auto flex flex-col overflow-hidden bg-transparent"
       >
         {/* Header: title, subtitle, quick actions, close. Sticky so it stays
             put while the form/socials scroll underneath. */}

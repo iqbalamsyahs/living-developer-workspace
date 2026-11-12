@@ -1,8 +1,8 @@
 // Headless-Chrome driver over CDP (no dependencies; Node's global WebSocket).
 // Usage: node scripts/e2e/shoot.mjs <outDir> [--w 1440] [--h 900] [--reduced-motion] [--no-webgl] [--url http://localhost:3000/] <step>...
 // Step: `action[:arg]` or `name:action[:arg]`. Actions:
-//   wait:<ms>  scroll:<px> (window.scrollTo)  wheel:<px> (real wheel event)
-//   click:<x>,<y>  drag:<x1>,<y1>,<x2>,<y2> (stays pressed until `release`)  release  key:<Key>  eval:<js>  log  shot (writes <outDir>/<name>.png)
+//   wait:<ms>  scroll:<px> (window.scrollTo)  wheel:<px> (real wheel event at centre)  wheelat:<x>,<y>,<px>
+//   resize:<w>x<h>  click:<x>,<y>  drag:<x1>,<y1>,<x2>,<y2> (stays pressed until `release`)  release  key:<Key>  eval:<js>  log  shot (writes <outDir>/<name>.png)
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,7 +22,7 @@ const [outDir, ...steps] = positional;
 if (!outDir) throw new Error("usage: shoot.mjs <outDir> [options] <step>...");
 mkdirSync(outDir, { recursive: true });
 
-const ACTIONS = ["wait", "scroll", "wheel", "click", "drag", "release", "key", "eval", "log", "shot"];
+const ACTIONS = ["wait", "scroll", "wheel", "wheelat", "click", "drag", "release", "resize", "key", "eval", "log", "shot"];
 const CHROME = process.env.CHROME_PATH ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const PORT = 9400 + Math.floor(Math.random() * 400);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -69,7 +69,13 @@ try {
     if (action === "wait") await sleep(+arg);
     else if (action === "scroll") await evaluate(`window.scrollTo(0, ${+arg})`);
     else if (action === "wheel") await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: opt.w / 2, y: opt.h / 2, deltaX: 0, deltaY: +arg });
-    else if (action === "click") {
+    else if (action === "wheelat") {
+      const [x, y, dy] = arg.split(",").map(Number);
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x, y, deltaX: 0, deltaY: dy });
+    } else if (action === "resize") {
+      const [w, h] = arg.split("x").map(Number);
+      await send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+    } else if (action === "click") {
       const [x, y] = arg.split(",").map(Number);
       for (const type of ["mouseMoved", "mousePressed", "mouseReleased"]) await send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 });
     } else if (action === "drag") {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { nearestStopIndex, scrollTopFor, snapTarget } from "@/lib/journey";
+import { nearestStopIndex, scrollTopFor, settleIndex } from "@/lib/journey";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const SNAP_DELAY_MS = 150;
@@ -25,6 +25,8 @@ export function useJourney({ count, enabled, locked }: JourneyOptions) {
   const [rawIndex, setRawIndex] = useState(0);
   const activeIndex = Math.min(rawIndex, Math.max(0, count - 1));
   const flight = useRef<{ top: number; until: number } | null>(null);
+  // Last stop the page settled on: the origin that gives a small scroll its direction.
+  const settled = useRef(0);
   const lockedRef = useRef(locked);
   useEffect(() => {
     lockedRef.current = locked;
@@ -45,26 +47,41 @@ export function useJourney({ count, enabled, locked }: JourneyOptions) {
           sync();
           return;
         }
+        const landed = f !== null;
         flight.current = null;
-        const top = snapTarget(window.scrollY, window.innerHeight, count);
-        if (top !== null) window.scrollTo({ top, behavior });
+        const h = window.innerHeight;
+        const index = landed ? nearestStopIndex(window.scrollY, h, count) : settleIndex(window.scrollY, h, count, settled.current);
+        settled.current = index;
+        const top = scrollTopFor(index, h);
+        if (Math.abs(window.scrollY - top) > 2) {
+          flight.current = { top, until: Date.now() + GOTO_GRACE_MS };
+          window.scrollTo({ top, behavior });
+        }
       }, SNAP_DELAY_MS);
     };
 
     const cancelFlight = () => {
       flight.current = null;
     };
+    // The viewport height changed: keep the same stop instead of re-deriving it from stale pixels.
+    const onResize = () => {
+      flight.current = null;
+      clearTimeout(timer);
+      const index = Math.min(settled.current, Math.max(0, count - 1));
+      window.scrollTo({ top: scrollTopFor(index, window.innerHeight), behavior: "auto" });
+      setRawIndex(index);
+    };
     const raf = requestAnimationFrame(sync);
     window.addEventListener("wheel", cancelFlight, { passive: true });
     window.addEventListener("touchstart", cancelFlight, { passive: true });
     window.addEventListener("keydown", cancelFlight);
     window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
+    window.addEventListener("resize", onResize);
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(timer);
       window.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("wheel", cancelFlight);
       window.removeEventListener("touchstart", cancelFlight);
       window.removeEventListener("keydown", cancelFlight);

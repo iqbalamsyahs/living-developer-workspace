@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildPortfolio, type PortfolioPayload } from "./portfolio.ts";
-import { buildStops, nearestStopIndex, scrollTopFor, snapTarget, stopIndexForContent } from "./journey.ts";
+import { buildStops, nearestStopIndex, settleIndex, scrollTopFor, stopIndexForContent } from "./journey.ts";
 
 const full: PortfolioPayload = {
   profile: {
@@ -54,12 +54,6 @@ test("scrollTopFor is one viewport per stop", () => {
   assert.equal(scrollTopFor(3, 800), 2400);
 });
 
-test("snapTarget is null when aligned and the nearest stop otherwise", () => {
-  assert.equal(snapTarget(901, 900, 5), null);
-  assert.equal(snapTarget(1100, 900, 5), 900);
-  assert.equal(snapTarget(0, 900, 5), null);
-});
-
 test("stopIndexForContent maps objects to stops and unknown ids to -1", () => {
   const stops = buildStops(buildPortfolio(full));
   const at = (id: string) => stopIndexForContent(stops, id, ["jrn-1"]);
@@ -72,4 +66,18 @@ test("stopIndexForContent maps objects to stops and unknown ids to -1", () => {
   const bare = buildStops(buildPortfolio({}));
   assert.equal(stopIndexForContent(bare, "jrn-1", ["jrn-1"]), -1);
   assert.equal(stopIndexForContent(bare, "showcase", []), -1);
+});
+
+test("settleIndex: a small nudge moves one stop in its direction, not back", () => {
+  assert.equal(settleIndex(100, 900, 5, 0), 1);
+  assert.equal(settleIndex(900 + 100, 900, 5, 1), 2);
+  assert.equal(settleIndex(900 - 100, 900, 5, 1), 0);
+});
+
+test("settleIndex: tiny drift stays, a big fling rounds, bounds clamp", () => {
+  assert.equal(settleIndex(10, 900, 5, 0), 0);
+  assert.equal(settleIndex(2600, 900, 5, 0), 3);
+  assert.equal(settleIndex(99999, 900, 5, 3), 4);
+  assert.equal(settleIndex(-300, 900, 5, 0), 0);
+  assert.equal(settleIndex(500, 900, 0, 0), 0);
 });

@@ -36,10 +36,19 @@ export function nearestStopIndex(scrollY: number, viewportH: number, count: numb
   return Math.min(count - 1, Math.max(0, Math.round(scrollY / viewportH)));
 }
 
-/** scrollTop to settle on, or null when already within 2px of a stop. */
-export function snapTarget(scrollY: number, viewportH: number, count: number): number | null {
-  const top = scrollTopFor(nearestStopIndex(scrollY, viewportH, count), viewportH);
-  return Math.abs(scrollY - top) <= 2 ? null : top;
+/**
+ * Stop to settle on once scrolling goes idle. A nudge past ~2% of a viewport moves one stop in
+ * its direction (so single wheel notches and arrow keys advance instead of bouncing back);
+ * half a viewport or more rounds to the nearest stop.
+ */
+export function settleIndex(scrollY: number, viewportH: number, count: number, startIndex: number): number {
+  if (count <= 0 || viewportH <= 0) return 0;
+  const last = count - 1;
+  const from = Math.min(last, Math.max(0, startIndex));
+  const delta = scrollY / viewportH - from;
+  if (Math.abs(delta) < 0.02) return from;
+  if (Math.abs(delta) >= 0.5) return nearestStopIndex(scrollY, viewportH, count);
+  return Math.min(last, Math.max(0, from + Math.sign(delta)));
 }
 
 /** Stop that shows a content id (object click, HUD item); -1 when it has no stop (resume, no data). */

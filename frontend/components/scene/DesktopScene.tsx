@@ -205,6 +205,7 @@ function CameraRig({
     // --- Detect zoomTarget transition on the first frame it changes ---
     if (zoomTarget !== prevZt.current) {
       prevZt.current = zoomTarget;
+      onZoomed(false); // panels wait for arrival
       if (zoomTarget) {
         // Zoom-in: the overview pose was captured once on the first frame, so a
         // zoom → zoom transition (about → stack) still returns to the desk.
@@ -322,8 +323,9 @@ export function DesktopScene({
     };
   }, [zoomTarget]);
 
+  // OrbitControls sets touch-action:none inline; the !important utility lets touch users still scroll the journey.
   return (
-    <div aria-hidden className="fixed inset-0 z-0">
+    <div aria-hidden className="fixed inset-0 z-0 [&_*]:touch-pan-y!">
       <Canvas dpr={[1, 2]} camera={{ position: [15, 10, 0], fov: 35 }}
         onCreated={({ gl }) =>
           gl.domElement.addEventListener("webglcontextlost", () => {

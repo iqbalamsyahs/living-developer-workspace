@@ -68,7 +68,7 @@ export function ShowcaseScreen({
     >
       <div
         style={{ width: widthPx * GLASS_SCALE, height: heightPx * GLASS_SCALE }}
-        className="flex flex-col overflow-hidden bg-surface"
+        className="pointer-events-auto flex flex-col overflow-hidden bg-surface"
       >
         {/* Window chrome: browser-style toolbar above the monitor screen. The
             header lives here, not in the grid, so it stays fixed while the

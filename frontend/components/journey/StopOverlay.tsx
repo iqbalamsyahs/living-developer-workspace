@@ -80,7 +80,7 @@ export function StopOverlay({ stop, portfolio, onOpen }: StopOverlayProps) {
   if (!card) return null;
   return (
     <div className="pointer-events-none fixed left-6 top-1/2 z-10 -translate-y-1/2">
-      <div key={stop.id} className={CARD} style={{ overscrollBehavior: "contain" }}>
+      <div key={stop.id} className={CARD}>
         {card}
       </div>
     </div>
