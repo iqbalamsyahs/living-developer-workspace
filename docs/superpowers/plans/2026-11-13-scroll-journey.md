@@ -158,7 +158,7 @@
 ### Task 8: End-to-end verification and docs
 
 **Files:**
-- Modify: `docs/prd.md` (camera note: perspective, fov 35), `frontend/components/scene/layout.ts` comments if stale.
+- Modify: `PRD.md` (camera note: perspective, fov 35), `frontend/components/scene/layout.ts` comments if stale.
 
 - [ ] **Step 1:** `pnpm test`, `pnpm tsc --noEmit`, `pnpm lint` from `frontend/`; `node --test ../content/`.
 - [ ] **Step 2: Desktop pass** with the CDP tool: walk all stops (screenshots), dots, Contact button, modal lock/unlock, limited rotation, Resume/Hire me visible at every stop.
