@@ -128,6 +128,8 @@ export function HomeClient({ portfolio }: HomeClientProps) {
             showcaseContent={portfolio.items.showcase}
             contactContent={portfolio.items.contact}
             aboutContent={portfolio.items.about}
+            stackContent={portfolio.items.stack}
+            categoryLabels={portfolio.siteConfig.categoryLabels}
             onCloseShowcase={closeShowcase}
           />
           </SceneBoundary>

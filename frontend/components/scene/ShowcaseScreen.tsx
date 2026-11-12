@@ -1,5 +1,6 @@
 "use client";
 
+import { getOverlayRoot } from "./overlayRoot";
 import { useRef, useState, type RefObject } from "react";
 import { Html } from "@react-three/drei";
 import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon } from "@radix-ui/react-icons";
@@ -28,7 +29,7 @@ interface ShowcaseScreenProps {
  * page — a browser-like page transition, no modal. "← Back to Projects"
  * slides back. Inside a drei <Html> anchor; the native <dialog> is
  * intentionally bypassed so the grid lives in the scene.
- * portal={document.body} lifts it out of the z-[-1] canvas wrapper; the
+ * portal={getOverlayRoot()} lifts it out of the z-[-1] canvas wrapper; the
  * zIndexRange keeps it above the HUD (z-10) but below any open <dialog>.
  *
  * The projected glass bounds include bezels and model padding, so the panel is
@@ -48,7 +49,7 @@ export function ShowcaseScreen({
   // drei Html resolves `portal.current` during render (falls back to the canvas
   // wrapper otherwise), so initialize the ref in render, not an effect. The
   // null-check is idempotent, so the ref-init lint rule accepts it.
-  if (portalRef.current === null) portalRef.current = document.body;
+  if (portalRef.current === null) portalRef.current = getOverlayRoot();
 
   // Window-internal navigation: which project detail (if any) is open. Both
   // panes stay mounted so the grid's scroll position survives Back.

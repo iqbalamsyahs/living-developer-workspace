@@ -1,5 +1,6 @@
 "use client";
 
+import { getOverlayRoot } from "./overlayRoot";
 import { useRef, type FormEvent, type RefObject } from "react";
 import { Html } from "@react-three/drei";
 import {
@@ -74,7 +75,7 @@ export function ContactScreen({
   const portalRef = useRef<HTMLElement | null>(null);
   // drei Html resolves `portal.current` during render, so initialize the ref
   // in render, not an effect (same as ShowcaseScreen).
-  if (portalRef.current === null) portalRef.current = document.body;
+  if (portalRef.current === null) portalRef.current = getOverlayRoot();
 
   const contact = content.contact;
   const email = contact?.email;

@@ -9,7 +9,8 @@ import { DEFAULT_TARGET, MODEL_LAYOUT, SCREENS, ZOOM_VIEWS } from "./layout";
 import { ShowcaseScreen } from "./ShowcaseScreen";
 import { ContactScreen } from "./ContactScreen";
 import { AboutScreen } from "./AboutScreen";
-import type { ContentItem } from "@/lib/portfolio";
+import { StackScreen } from "./StackScreen";
+import type { ContentItem, SiteConfig } from "@/lib/portfolio";
 
 // Calibration flag from .env.local (NEXT_PUBLIC_ is inlined into the client
 // bundle). True shows the drei Grid + axes helper while tuning MODEL_LAYOUT.
@@ -43,6 +44,8 @@ interface DesktopSceneProps {
   contactContent?: ContentItem;
   /** About item rendered as an open book on the notebook while its zoom is active. */
   aboutContent?: ContentItem;
+  stackContent?: ContentItem;
+  categoryLabels: SiteConfig["categoryLabels"];
   onCloseShowcase: () => void;
 }
 
@@ -280,6 +283,8 @@ export function DesktopScene({
   showcaseContent,
   contactContent,
   aboutContent,
+  stackContent,
+  categoryLabels,
   onCloseShowcase,
   onContextLost,
   reducedMotion = false,
@@ -402,6 +407,15 @@ export function DesktopScene({
             widthPx={screenSize.w}
             heightPx={screenSize.h}
             content={aboutContent}
+            onClose={onCloseShowcase}
+          />
+        )}
+
+        {zoomed && zoomTarget === "stack" && stackContent && screenSize.w > 0 && (
+          <StackScreen
+            position={[zoomView.lookTarget.x, zoomView.lookTarget.y, zoomView.lookTarget.z + 0.005]}
+            content={stackContent}
+            categoryLabels={categoryLabels}
             onClose={onCloseShowcase}
           />
         )}

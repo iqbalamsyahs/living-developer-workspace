@@ -1,5 +1,6 @@
 "use client";
 
+import { getOverlayRoot } from "./overlayRoot";
 import { useRef, type RefObject } from "react";
 import { Html } from "@react-three/drei";
 import { Cross2Icon } from "@radix-ui/react-icons";
@@ -51,7 +52,7 @@ const PANEL_ROTATION: [number, number, number] = [-Math.PI / 2, 0, -2.854];
  */
 export function AboutScreen({ position, content, onClose }: AboutScreenProps) {
   const portalRef = useRef<HTMLElement | null>(null);
-  if (portalRef.current === null) portalRef.current = document.body;
+  if (portalRef.current === null) portalRef.current = getOverlayRoot();
 
   return (
     <Html

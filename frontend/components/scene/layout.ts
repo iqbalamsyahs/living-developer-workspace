@@ -101,6 +101,12 @@ export const ZOOM_VIEWS: Record<
     camDir: [0, 1, 0],
     camUp: [0.2837, 0, 0.9589],
   },
+  // Whiteboard (scripts/glb/measure-bounds.mjs: local x[-0.0517,0.0433] y[-0.14,0.66] z[-0.57,0.57]).
+  // Ry(90deg) maps local (x,y,z) -> world (z,y,-x): the board spans world x 0.5±0.57, y [0.70,1.50] and its
+  // open face sits at world z 1.31+0.0517 = 1.362. The camera parks on the +Z side, outside the desk set
+  // (the -Z side is inside the PC/monitor volume), looking -Z.
+  // camDist 1.9: the 0.8-tall board fills ~65% of the view at fov 35.
+  stack: { screenOffset: [0, 0.26, 0.0517], camDist: 1.9, camDir: [0, 0, 1], camUp: [0, 1, 0] },
 };
 
 export const DEFAULT_TARGET: [number, number, number] = [0.5, 0.5, 0];
@@ -132,6 +138,8 @@ export const SCREENS: Record<
     br: [GLASS_BOUNDS.min.x, GLASS_BOUNDS.min.y, GLASS_BOUNDS.max.z],
     tl: [GLASS_BOUNDS.min.x, GLASS_BOUNDS.max.y, GLASS_BOUNDS.min.z],
   },
+  // Whiteboard writable face (see ZOOM_VIEWS.stack), seen from +Z: screen-left is world -X.
+  stack: { bl: [0.0, 0.75, 1.362], br: [1.0, 0.75, 1.362], tl: [0.0, 1.45, 1.362] },
   contact: {
     bl: [0.6394, 0.961, 0.518],
     br: [0.8784, 0.961, 0.518],
