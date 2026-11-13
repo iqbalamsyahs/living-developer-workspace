@@ -1,13 +1,13 @@
 // Usage: node content/build-import.mjs  ->  content/content.ndjson
 import { writeFileSync } from "node:fs";
-import { email, experience, faq, photo, projects, services, socials, stack } from "./data.mjs";
+import { bio, email, experience, faq, philosophy, photo, projects, services, socials, stack } from "./data.mjs";
 
 const keyed = (prefix, items) => items.map((item, i) => ({ _key: `${prefix}${i}`, ...item }));
 // `_sanityAsset` sits on the image object itself; the importer uploads the URL and writes `asset._ref`.
 const image = (url, alt) => ({ _type: "image", _sanityAsset: `image@${url}`, alt });
-const block = (text) => ({
+const block = (text, i = 0) => ({
   _type: "block",
-  _key: "b0",
+  _key: `b${i}`,
   style: "normal",
   markDefs: [],
   children: [{ _type: "span", _key: "s0", marks: [], text }],
@@ -38,6 +38,8 @@ const docs = [
     name: "Iqbal Alamsyah",
     heroTagline:
       "Frontend Web Developer at Aegislabs since 2021, building web apps, landing pages and CMS with React, Vue and Laravel.",
+    bio: bio.map(block),
+    philosophy,
     photo: image(photo.url, photo.alt),
     availability: { isAvailable: true, statusText: "Available for work", timezone: "Asia/Jakarta" },
     experiences: [{ _type: "reference", _key: "e0", _ref: experience.id }],

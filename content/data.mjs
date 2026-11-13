@@ -37,7 +37,16 @@ export const socials = [
   { platform: "facebook", url: "https://web.facebook.com/m.s.12327" },
 ];
 
-export const photo = { url: IMG("1yCelgDI6rlFZFD7urP97WH5mHo.jpg"), alt: "Portrait of Iqbal Alamsyah" };
+// Owner-approved About copy: one string per paragraph.
+export const bio = [
+  "I'm Iqbal, a frontend web developer from Bandung, Indonesia. Since 2021 I've worked at Aegislabs, building applications with Laravel, React and Vue, including asset and project management systems for PLN.",
+  "Outside the day job I take on freelance work: web apps, landing pages that convert, CMS tools teams can run themselves, and API integrations. I work remotely with clients anywhere, and I care about the details users feel: speed, responsiveness and a clean handoff.",
+];
+
+export const philosophy =
+  "Good software is like a well-lit room: you find what you need without looking for the switch.";
+
+export const photo ={ url: IMG("1yCelgDI6rlFZFD7urP97WH5mHo.jpg"), alt: "Portrait of Iqbal Alamsyah" };
 
 export const experience = {
   id: "experience-aegislabs",

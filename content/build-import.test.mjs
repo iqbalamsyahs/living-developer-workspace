@@ -23,6 +23,13 @@ test("images use the importer's _sanityAsset shape, not a nested asset", () => {
   assert.match(ofType("profile")[0].photo._sanityAsset, /^image@https:\/\//);
 });
 
+test("bio is two blocks with unique keys, philosophy is set", () => {
+  const p = ofType("profile")[0];
+  assert.equal(p.bio.length, 2);
+  assert.equal(new Set(p.bio.map((b) => b._key)).size, 2);
+  assert.ok(p.philosophy);
+});
+
 test("profile is the pinned singleton", () => {
   assert.equal(ofType("profile")[0]._id, "profile");
 });
