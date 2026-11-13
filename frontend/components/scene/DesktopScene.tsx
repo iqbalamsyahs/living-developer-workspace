@@ -2,9 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState, type ElementRef } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, Html, OrbitControls } from "@react-three/drei";
-import { BoxGeometry, MathUtils, Vector3 } from "three";
-import { clampTarget, DECOR, OBJECTS, ORBIT_LIMITS, OVERVIEW, type Box, type RoomId, type Vec3 } from "@/lib/room";
+import { ContactShadows, Environment, Html, Lightformer, OrbitControls } from "@react-three/drei";
+import {
+  BoxGeometry,
+  type BufferGeometry,
+  CanvasTexture,
+  CylinderGeometry,
+  IcosahedronGeometry,
+  MathUtils,
+  SRGBColorSpace,
+  Vector3,
+} from "three";
+import { clampTarget, DECOR, OBJECTS, ORBIT_LIMITS, OVERVIEW, type Box, type Material, type RoomId, type Shape, type Vec3 } from "@/lib/room";
 
 const DAMP_LAMBDA = 6;
 const ARRIVE_EPS = 0.005;
@@ -27,18 +36,89 @@ type ControlsImpl = ElementRef<typeof OrbitControls>;
 // from one object to another: the new over re-sets the flag before the clear runs.
 let interactiveHovered = false;
 
-function Boxes({ boxes, geometry, hovered = false }: { boxes: Box[]; geometry: BoxGeometry; hovered?: boolean }) {
-  return boxes.map((b, i) => (
-    <mesh key={i} geometry={geometry} position={b.position} scale={b.size}>
-      <meshStandardMaterial
-        color={b.color}
-        flatShading
-        emissive={b.color}
-        emissiveIntensity={b.glow ? (hovered ? 1.4 : 1) : hovered ? 0.3 : 0}
-        toneMapped={!b.glow}
-      />
-    </mesh>
-  ));
+interface Kit {
+  geometry: Record<Shape, BufferGeometry>;
+  texture: Record<"wood" | "fabric", CanvasTexture>;
+}
+
+const MATERIAL: Record<Material | "paint", { roughness: number; metalness: number; texture?: keyof Kit["texture"] }> = {
+  paint: { roughness: 0.92, metalness: 0 },
+  wood: { roughness: 0.72, metalness: 0, texture: "wood" },
+  fabric: { roughness: 1, metalness: 0, texture: "fabric" },
+  plastic: { roughness: 0.42, metalness: 0 },
+  metal: { roughness: 0.32, metalness: 0.85 },
+  glass: { roughness: 0.05, metalness: 0.3 },
+  ceramic: { roughness: 0.22, metalness: 0 },
+};
+
+/** Grayscale noise drawn once into a canvas; multiplied by each box color, so one texture serves every wood/fabric tone. */
+function noiseTexture(draw: (ctx: CanvasRenderingContext2D, rand: () => number) => void): CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  if (ctx) draw(ctx, rand);
+  const t = new CanvasTexture(canvas);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
+function createKit(): Kit {
+  return {
+    geometry: {
+      box: new BoxGeometry(1, 1, 1),
+      cylinder: new CylinderGeometry(0.5, 0.5, 1, 28),
+      sphere: new IcosahedronGeometry(0.5, 1),
+    },
+    texture: {
+      // Vertical grain streaks of varying width and tone.
+      wood: noiseTexture((ctx, rand) => {
+        ctx.fillStyle = "#e6e6e6";
+        ctx.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 90; i++) {
+          const v = 170 + Math.floor(rand() * 85);
+          ctx.fillStyle = `rgba(${v},${v},${v},0.55)`;
+          ctx.fillRect(rand() * 256, 0, 0.6 + rand() * 3, 256);
+        }
+      }),
+      // Fine speckle that reads as woven fibre under the lamp.
+      fabric: noiseTexture((ctx, rand) => {
+        ctx.fillStyle = "#ececec";
+        ctx.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 6000; i++) {
+          const v = 190 + Math.floor(rand() * 65);
+          ctx.fillStyle = `rgb(${v},${v},${v})`;
+          ctx.fillRect(rand() * 256, rand() * 256, 1, 1);
+        }
+      }),
+    },
+  };
+}
+
+// ponytail: one mesh + material per box (~300 draw calls); merge static DECOR or instance by material if FPS drops on low-end GPUs.
+function Boxes({ boxes, kit, hovered = false }: { boxes: Box[]; kit: Kit; hovered?: boolean }) {
+  return boxes.map((b, i) => {
+    const m = MATERIAL[b.mat ?? "paint"];
+    const map = m.texture ? kit.texture[m.texture] : null;
+    return (
+      <mesh key={i} geometry={kit.geometry[b.shape ?? "box"]} position={b.position} scale={b.size} castShadow={!b.glow} receiveShadow>
+        <meshStandardMaterial
+          color={b.color}
+          map={map}
+          bumpMap={map}
+          bumpScale={map ? 0.6 : 0}
+          roughness={m.roughness}
+          metalness={m.metalness}
+          transparent={b.mat === "glass"}
+          opacity={b.mat === "glass" ? 0.35 : 1}
+          emissive={b.color}
+          emissiveIntensity={b.glow ? (hovered ? 1.4 : 1) : hovered ? 0.3 : 0}
+          toneMapped={!b.glow}
+        />
+      </mesh>
+    );
+  });
 }
 
 function RoomObject({
@@ -46,7 +126,7 @@ function RoomObject({
   label,
   clickable,
   showLabel,
-  geometry,
+  kit,
   onSelect,
 }: {
   id: RoomId;
@@ -54,7 +134,7 @@ function RoomObject({
   clickable: boolean;
   /** False while a panel is open: the camera is framed on an object and the label would sit over it. */
   showLabel: boolean;
-  geometry: BoxGeometry;
+  kit: Kit;
   onSelect: (id: RoomId) => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -111,7 +191,7 @@ function RoomObject({
   const lit = clickable && hovered;
   return (
     <group {...handlers}>
-      <Boxes boxes={boxes} geometry={geometry} hovered={lit} />
+      <Boxes boxes={boxes} kit={kit} hovered={lit} />
       {lit && showLabel && (
         <Html position={labelAt} center pointerEvents="none" zIndexRange={[5, 0]}>
           <span className="pointer-events-none whitespace-nowrap rounded-sm border border-line bg-surface/90 px-2 py-1 font-mono text-xs text-text-primary">
@@ -192,7 +272,7 @@ function keepInRoom(e?: { target: ControlsImpl }) {
 }
 
 /**
- * Low-poly night bedroom built from unit boxes. Renders at z-0 behind the HUD
+ * Night bedroom built from code primitives with procedural wood/fabric textures. Renders at z-0 behind the HUD
  * overlay; the wrapper is aria-hidden since interactive content lives in HUD/Modal.
  */
 export function DesktopScene({
@@ -215,31 +295,58 @@ export function DesktopScene({
     };
   }, []);
 
-  const geometry = useMemo(() => new BoxGeometry(1, 1, 1), []);
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const kit = useMemo(() => createKit(), []);
+  useEffect(
+    () => () => {
+      Object.values(kit.geometry).forEach((g) => g.dispose());
+      Object.values(kit.texture).forEach((t) => t.dispose());
+    },
+    [kit],
+  );
 
   return (
     <div aria-hidden className="fixed inset-0 z-0">
       <Canvas
         dpr={[1, 2]}
+        shadows="percentage"
         camera={{ position: OVERVIEW.position, fov: 35 }}
         onPointerMissed={onBackgroundClick}
-        onCreated={({ gl }) =>
+        onCreated={({ gl }) => {
+          // Static room: render the lamp shadow once instead of 6 cube faces every frame.
+          gl.shadowMap.autoUpdate = false;
+          gl.shadowMap.needsUpdate = true;
           gl.domElement.addEventListener("webglcontextlost", () => {
             if (mountedRef.current) onContextLost?.();
-          })
-        }
+          });
+        }}
       >
         <color attach="background" args={["#0f0d17"]} />
-        <ambientLight intensity={0.45} color="#b9a8d6" />
-        {/* Desk lamp head: the main warm source. */}
-        <pointLight position={[1.07, 1.5, 0.57]} intensity={9} distance={9} decay={1.6} color="#ffb86b" />
+        <ambientLight intensity={0.6} color="#b9a8d6" />
+        {/* Inside the lamp shade (above the stem, so the stem does not shadow everything): the main warm source. */}
+        <pointLight
+          position={[1.07, 1.62, 0.57]}
+          intensity={9}
+          distance={9}
+          decay={1.6}
+          color="#ffb86b"
+          castShadow
+          shadow-mapSize={[1024, 1024]}
+          shadow-bias={-0.002}
+          shadow-camera-near={0.05}
+        />
         <pointLight position={[2.2, 1.8, 0.8]} intensity={1.5} distance={3} color="#9be7c4" />
         <pointLight position={[2.2, 2.6, 0.6]} intensity={2} distance={5} color="#6f8fd6" />
         {/* Cool moonlight from the window side keeps the dark faces readable. */}
         <directionalLight position={[4, 7, 1]} intensity={0.7} color="#8fa3d9" />
 
-        <Boxes boxes={DECOR} geometry={geometry} />
+        {/* Local soft reflections so metal/plastic read as such; no HDR download. */}
+        <Environment resolution={64} environmentIntensity={0.35}>
+          <Lightformer position={[1.07, 1.5, 0.57]} scale={1.5} intensity={3} color="#ffb86b" />
+          <Lightformer position={[2.2, 2.6, -1]} scale={[2, 1.4, 1]} intensity={1.5} color="#6f8fd6" />
+          <Lightformer position={[8, 6, 8]} scale={6} intensity={0.4} color="#b9a8d6" />
+        </Environment>
+
+        <Boxes boxes={DECOR} kit={kit} />
         {(Object.keys(OBJECTS) as RoomId[]).map((id) => (
           <RoomObject
             key={id}
@@ -247,7 +354,7 @@ export function DesktopScene({
             label={labels[id]}
             clickable={active.includes(id)}
             showLabel={focus === null}
-            geometry={geometry}
+            kit={kit}
             onSelect={onSelect}
           />
         ))}
