@@ -9,7 +9,7 @@ interface IntroCardProps {
 export function IntroCard({ name, tagline, resumeHref, resumeLabel }: IntroCardProps) {
   return (
     <div className="fixed bottom-16 left-6 z-10 max-w-xs rounded-md border border-line bg-surface/85 p-6 backdrop-blur">
-      <h1 className="font-display text-3xl leading-tight text-text-primary">{name}</h1>
+      <h1 tabIndex={-1} className="font-display text-3xl leading-tight text-text-primary outline-none">{name}</h1>
       {tagline && <p className="mt-3 text-sm leading-relaxed text-text-secondary">{tagline}</p>}
       {resumeHref && (
         <a

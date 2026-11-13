@@ -58,16 +58,20 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   const nav = useMemo(() => active.map((id) => ({ id, label: ROOM_LABELS[id] })), [active]);
   const reducedMotion = useReducedMotion();
 
+  // The toggle that was focused unmounts with its view; land on the new view's heading.
+  const focusHeading = () => requestAnimationFrame(() => document.querySelector<HTMLElement>("h1")?.focus());
   const toggleView = () => {
     setStandardOverride((overridden) => !overridden);
     setActiveModal(null);
     setFocus(null);
+    focusHeading();
   };
   const handleSceneFailure = () => {
     setSceneFailed(true);
     setStandardOverride(true);
     setActiveModal(null);
     setFocus(null);
+    focusHeading();
   };
   const closeModal = () => setActiveModal(null);
   const closePanel = useCallback(() => {

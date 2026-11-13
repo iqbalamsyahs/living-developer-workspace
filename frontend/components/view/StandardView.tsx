@@ -62,7 +62,7 @@ export function StandardView({ portfolio, onToggleHUD, onOpen, resumeHref }: Sta
 
       {/* Hero */}
       <header className="py-16">
-        <h1 className="font-display text-4xl leading-none tracking-tight text-text-primary md:text-5xl">
+        <h1 tabIndex={-1} className="font-display text-4xl leading-none tracking-tight text-text-primary outline-none md:text-5xl">
           {portfolio.profile.name}
         </h1>
         <p className="mt-4 max-w-[45ch] text-base leading-relaxed text-text-secondary">
