@@ -46,7 +46,10 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   const [splashLeaving, setSplashLeaving] = useState(false);
   const [splashGone, setSplashGone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setSplashLeaving(true), 1100);
+    // Mobile keeps the SSR Standard View, so there is no flip to hide: drop the
+    // splash at once (CSS already hides it there before hydration).
+    const mobile = !window.matchMedia("(min-width: 768px)").matches;
+    const t = setTimeout(() => (mobile ? setSplashGone(true) : setSplashLeaving(true)), mobile ? 0 : 1100);
     return () => clearTimeout(t);
   }, []);
 
