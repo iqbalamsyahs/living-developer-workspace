@@ -33,7 +33,7 @@ export function ExperienceTimeline({ experiences }: ExperienceTimelineProps) {
             {exp.company}
           </p>
           <p className="mt-0.5 font-mono text-[11px] uppercase tracking-wide text-text-secondary">
-            {exp.startDate} – {exp.endDate ?? "Present"}
+            {exp.startDate?.slice(0, 4)} – {exp.endDate?.slice(0, 4) ?? "Present"}
           </p>
           <RichText value={exp.description} className="mt-2 text-sm leading-relaxed" />
         </li>

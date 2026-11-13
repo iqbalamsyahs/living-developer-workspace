@@ -9,3 +9,5 @@
 .DS_Store
 node_modules/
 /.superpowers/
+/.shots/
+/.playwright-mcp/

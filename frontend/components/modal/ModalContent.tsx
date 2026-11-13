@@ -37,7 +37,7 @@ export function ModalContent({ content, onClose }: ModalContentProps) {
 
       {content.tech && content.tech.length > 0 && (
         <div
-          className="flex flex-wrap gap-2 border-b border-primary/10 p-8 pb-6"
+          className="flex flex-wrap gap-2 border-b border-line p-8 pb-6"
           aria-label="Tech stack"
         >
           {content.tech.map((tech) => (
@@ -55,7 +55,7 @@ export function ModalContent({ content, onClose }: ModalContentProps) {
       </div>
 
       {content.links && content.links.length > 0 && (
-        <footer className="flex items-center gap-6 border-t border-primary/10 p-8 pt-6">
+        <footer className="flex items-center gap-6 border-t border-line p-8 pt-6">
           {content.links.map((link) => (
             <a
               key={link.href}

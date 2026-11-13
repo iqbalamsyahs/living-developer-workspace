@@ -26,10 +26,10 @@ export function ShowcaseCard({
 }) {
   return (
     <article
-      className="rounded-md border border-primary/10 bg-surface p-6 transition-colors hover:border-primary/40"
+      className="rounded-md border border-line bg-surface p-6 transition-colors hover:border-primary/40"
     >
       {project.coverImage && (
-        <div className="mb-4 overflow-hidden rounded-sm border border-primary/10">
+        <div className="mb-4 overflow-hidden rounded-sm border border-line">
           <SanityImage
             image={project.coverImage}
             width={800}
@@ -67,7 +67,7 @@ export function ShowcaseCard({
 }
 
 /**
- * Showcase Projects modal: a card list of projects; each card opens the
+ * Projects modal: a card list of projects; each card opens the
  * detailed project, which restores this modal on close. Opened by the PC.
  */
 export function ShowcaseModalContent({

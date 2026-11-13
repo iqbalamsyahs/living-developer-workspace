@@ -23,6 +23,7 @@ export function SplashScreen({ leaving, onTransitionEnd, brand, splashLine }: Sp
   // lock BOTH html and body — overflow on body alone doesn't propagate to the
   // viewport when html is still `visible`, so the document scrollbar remains.
   useEffect(() => {
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
     const html = document.documentElement;
     const prevHtml = html.style.overflow;
     const prevBody = document.body.style.overflow;
@@ -38,7 +39,7 @@ export function SplashScreen({ leaving, onTransitionEnd, brand, splashLine }: Sp
     <div
       aria-hidden
       onTransitionEnd={onTransitionEnd}
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-background transition-opacity duration-500 ${
+      className={`fixed inset-0 z-50 hidden items-center md:flex justify-center bg-background transition-opacity duration-500 ${
         leaving ? "opacity-0" : "opacity-100"
       }`}
     >

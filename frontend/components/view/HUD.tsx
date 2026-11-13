@@ -1,18 +1,11 @@
 "use client";
 
-import {
-  DesktopIcon,
-  IdCardIcon,
-  MobileIcon,
-  PersonIcon,
-  ReaderIcon,
-  StackIcon,
-} from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/Button";
 import { useLocalTime } from "@/hooks/useLocalTime";
 import { zoneLabel } from "@/lib/time";
 import type { Availability } from "@/lib/portfolio";
 import type { RoomId } from "@/lib/room";
+import { RoomIcon } from "@/components/view/RoomIcons";
 
 interface HUDProps {
   brand: string;
@@ -49,15 +42,6 @@ function AvailabilityBadge({ availability }: { availability: Availability }) {
     </p>
   );
 }
-
-const ICONS: Record<RoomId, typeof DesktopIcon> = {
-  showcase: DesktopIcon,
-  about: PersonIcon,
-  stack: StackIcon,
-  experience: IdCardIcon,
-  journal: ReaderIcon,
-  contact: MobileIcon,
-};
 
 /** RoomPanel is w-[min(28rem,50vw)]; while open, right-edge controls sit just left of it. */
 const LEFT_OF_PANEL = "right-[calc(min(28rem,50vw)+1.5rem)]";
@@ -108,11 +92,6 @@ export function HUD({
               Resume
             </a>
           )}
-          {nav.some((n) => n.id === "contact") && (
-            <Button variant="ghost" size="sm" onClick={() => onOpen("contact")}>
-              Contact
-            </Button>
-          )}
           {hireMeHref && (
             <a
               href={hireMeHref}
@@ -123,7 +102,7 @@ export function HUD({
             </a>
           )}
           <Button variant="outline" size="sm" onClick={onToggleStandard}>
-            Standard View
+            Simple page
           </Button>
         </div>
       </div>
@@ -141,22 +120,25 @@ export function HUD({
         aria-label="Open content"
         className={`pointer-events-auto absolute top-1/2 flex -translate-y-1/2 flex-col gap-3 ${panelOpen ? `max-lg:hidden ${LEFT_OF_PANEL}` : "right-6"}`}
       >
-        {nav.map((item) => {
-          const Icon = ICONS[item.id];
-          return (
-            <button
-              key={item.id}
-              type="button"
-              aria-label={item.label}
-              aria-pressed={openId === item.id}
-              data-room={item.id}
-              onClick={() => (openId === item.id ? onClose() : onOpen(item.id))}
-              className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
+        {nav.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-label={item.label}
+            aria-pressed={openId === item.id}
+            data-room={item.id}
+            onClick={() => (openId === item.id ? onClose() : onOpen(item.id))}
+            className="group relative flex h-11 w-11 items-center justify-center rounded-sm border border-line bg-surface/80 backdrop-blur transition-colors hover:border-primary aria-pressed:border-primary aria-pressed:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
+          >
+            <RoomIcon id={item.id} className="h-8 w-8" />
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute right-full mr-2 whitespace-nowrap rounded-sm border border-line bg-surface px-2 py-1 font-display text-xs text-text-primary transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 ${panelOpen ? "opacity-0" : "opacity-0 xl:opacity-100"}`}
             >
-              <Icon width={18} height={18} aria-hidden="true" />
-            </button>
-          );
-        })}
+              {item.label}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );

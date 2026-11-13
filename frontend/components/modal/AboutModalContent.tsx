@@ -15,7 +15,7 @@ interface AboutModalContentProps {
 const JP_CHARS = /[぀-ヿ㐀-䶿一-鿿]/;
 
 /**
- * About & Experience modal: narrative bio, a one-line philosophy, then the
+ * About modal: narrative bio, a one-line philosophy, then the
  * career timeline. Opened by the open book on the desk.
  */
 export function AboutModalContent({ content, onClose }: AboutModalContentProps) {
@@ -36,7 +36,7 @@ export function AboutModalContent({ content, onClose }: AboutModalContentProps) 
             width={320}
             alt={content.photo.alt}
             aspect="1/1"
-            className="mb-6 h-32 w-32 rounded-md border border-primary/10"
+            className="mb-6 h-32 w-32 rounded-md border border-line"
           />
         )}
 
@@ -50,7 +50,7 @@ export function AboutModalContent({ content, onClose }: AboutModalContentProps) 
       </div>
 
       {content.experiences && content.experiences.length > 0 && (
-        <div className="border-t border-primary/10 p-8 pt-6">
+        <div className="border-t border-line p-8 pt-6">
           <h3 className="mb-6 font-display text-lg text-text-primary">
             Experience
           </h3>

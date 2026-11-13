@@ -51,7 +51,7 @@ Traditional developer portfolios rely on static lists and grids that tell visito
 *   Camera is a perspective camera (small fov) with free orbit within clamps: azimuth clamped to the room's open side, polar angle clamped above the floor and below the ceiling, zoom and pan clamped to stay inside the room.
 *   Clicking an object flies the camera to a pose framing that object and opens the right-hand panel (6.2). Clicking empty space or the close control flies back to the overview pose.
 *   Hovering a clickable object shows a glow, a pointer cursor, and a small label with the object's content name. Objects whose mapped Sanity content is empty are inert: no hover, no glow, not clickable, not in nav.
-*   Must include a global UI overlay (HTML outside the canvas) with a clear "Standard View" toggle and HUD nav buttons mirroring the clickable objects.
+*   Must include a global UI overlay (HTML outside the canvas) with a clear "Simple page" toggle to the Standard View and HUD nav buttons mirroring the clickable objects.
 
 **6.2. The Content Panel**
 *   When a room object is clicked, the camera flies to it and a single right-hand panel (reused across all six objects) opens with that object's content, replacing the old per-object modal overlay.

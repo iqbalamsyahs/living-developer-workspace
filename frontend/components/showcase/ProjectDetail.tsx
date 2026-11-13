@@ -79,8 +79,8 @@ export function ProjectDetail({ content }: ProjectDetailProps) {
     <>
       {/* Gallery: main image + click-to-swap thumbnail strip */}
       {activeImage && (
-        <div className="border-b border-primary/10 p-8 pb-6">
-          <div className="overflow-hidden rounded-md border border-primary/10">
+        <div className="border-b border-line p-8 pb-6">
+          <div className="overflow-hidden rounded-md border border-line">
             <SanityImage
               image={activeImage}
               width={1200}
@@ -99,7 +99,7 @@ export function ProjectDetail({ content }: ProjectDetailProps) {
                   aria-label={`Show screenshot ${i + 1} of ${images.length}`}
                   aria-pressed={i === active}
                   className={`size-14 shrink-0 overflow-hidden rounded-sm border transition-colors ${
-                    i === active ? "border-primary" : "border-primary/10 hover:border-primary/40"
+                    i === active ? "border-primary" : "border-line hover:border-primary/40"
                   }`}
                 >
                   <SanityImage image={img} width={112} alt="" className="h-full w-full object-cover" />
@@ -112,7 +112,7 @@ export function ProjectDetail({ content }: ProjectDetailProps) {
 
       {content.tech && content.tech.length > 0 && (
         <div
-          className="flex flex-wrap gap-2 border-b border-primary/10 p-8 pb-6"
+          className="flex flex-wrap gap-2 border-b border-line p-8 pb-6"
           aria-label="Tech stack"
         >
           {content.tech.map((tech) => (
@@ -140,11 +140,15 @@ export function ProjectDetail({ content }: ProjectDetailProps) {
           <ListSection title="Outcomes" items={content.outcomes} marker="✓" />
         )}
 
-        {content.body.length > 0 && <RichText value={content.body} />}
+        {content.body.length > 0 ? (
+          <RichText value={content.body} className="mt-8" />
+        ) : (
+          content.summary && <p className="max-w-[65ch] text-pretty text-base text-text-primary/90">{content.summary}</p>
+        )}
       </div>
 
       {content.links && content.links.length > 0 && (
-        <footer className="flex items-center gap-6 border-t border-primary/10 p-8 pt-6">
+        <footer className="flex items-center gap-6 border-t border-line p-8 pt-6">
           {content.links.map((link) => (
             <a
               key={link.href}

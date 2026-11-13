@@ -42,6 +42,20 @@ export function Modal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
+  // Parents unmount the dialog while still open, which skips the native
+  // focus restore; put focus back on the trigger ourselves. Declared before
+  // the showModal effect so it captures the trigger, not the dialog.
+  // The ref survives StrictMode's remount, when focus is already inside the dialog.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const active = document.activeElement as HTMLElement | null;
+    if (!ref.current?.contains(active)) triggerRef.current = active;
+    return () => {
+      const trigger = triggerRef.current;
+      if (trigger?.isConnected) requestAnimationFrame(() => trigger.focus());
+    };
+  }, []);
+
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
@@ -76,7 +90,7 @@ export function Modal({
       }}
     >
       <div
-        className={`flex h-full flex-col overflow-hidden bg-surface text-text-primary shadow-modal-glow md:mx-auto md:my-auto md:h-auto md:max-h-[85vh] md:w-[80%] md:rounded-md lg:my-0 lg:ml-auto lg:mr-0 lg:h-full lg:w-[40%] lg:rounded-none ${className}`}
+        className={`flex h-full flex-col overflow-hidden bg-surface text-text-primary shadow-modal-glow md:mx-auto md:my-auto md:h-auto md:max-h-[85vh] md:w-[80%] md:rounded-md lg:my-0 lg:ml-auto lg:mr-0 lg:h-full lg:max-h-none lg:w-[max(40%,min(28rem,50vw))] lg:rounded-none ${className}`}
       >
         {children}
       </div>

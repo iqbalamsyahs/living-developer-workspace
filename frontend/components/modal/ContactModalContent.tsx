@@ -40,7 +40,7 @@ export function ContactModalContent({ content, onClose }: ContactModalContentPro
 
         {contact && (
           <div className="mt-6 flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3 rounded-md border border-primary/10 bg-surface p-4">
+            <div className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface p-4">
               <div className="flex min-w-0 items-center gap-3">
                 <EnvelopeClosedIcon width={18} height={18} aria-hidden="true" className="shrink-0 text-primary" />
                 <a

@@ -31,7 +31,7 @@ const DEFAULT_LABELS: Record<StackCategory, string> = {
 };
 
 /**
- * My Stack & My Services modal: the tech stack grouped by category (bento
+ * Stack & Services modal: the tech stack grouped by category (bento
  * feel via pill rows), then services as bordered cards. Opened by the
  * whiteboard on the desk.
  */
@@ -63,7 +63,7 @@ export function StackModalContent({
       <ModalHeader id={content.id} title={content.title} onClose={onClose} />
 
       {tabs.length > 1 && (
-        <div role="tablist" aria-label="Stack and services" className="flex gap-2 border-b border-primary/10 px-8 pt-4">
+        <div role="tablist" aria-label="Stack and services" className="flex gap-2 border-b border-line px-8 pt-4">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -117,7 +117,7 @@ export function StackModalContent({
             {services.map((service) => (
               <article
                 key={service.name}
-                className="rounded-md border border-primary/10 bg-surface p-5"
+                className="rounded-md border border-line bg-surface p-5"
               >
                 <h3 className="font-display text-sm text-text-primary">
                   {service.name}

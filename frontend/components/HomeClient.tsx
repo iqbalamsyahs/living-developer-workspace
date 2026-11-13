@@ -46,7 +46,10 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   const [splashLeaving, setSplashLeaving] = useState(false);
   const [splashGone, setSplashGone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setSplashLeaving(true), 1100);
+    // Mobile keeps the SSR Standard View, so there is no flip to hide: drop the
+    // splash at once (CSS already hides it there before hydration).
+    const mobile = !window.matchMedia("(min-width: 768px)").matches;
+    const t = setTimeout(() => (mobile ? setSplashGone(true) : setSplashLeaving(true)), mobile ? 0 : 1100);
     return () => clearTimeout(t);
   }, []);
 
@@ -58,16 +61,20 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   const nav = useMemo(() => active.map((id) => ({ id, label: ROOM_LABELS[id] })), [active]);
   const reducedMotion = useReducedMotion();
 
+  // The toggle that was focused unmounts with its view; land on the new view's heading.
+  const focusHeading = () => requestAnimationFrame(() => document.querySelector<HTMLElement>("h1")?.focus());
   const toggleView = () => {
     setStandardOverride((overridden) => !overridden);
     setActiveModal(null);
     setFocus(null);
+    focusHeading();
   };
   const handleSceneFailure = () => {
     setSceneFailed(true);
     setStandardOverride(true);
     setActiveModal(null);
     setFocus(null);
+    focusHeading();
   };
   const closeModal = () => setActiveModal(null);
   const closePanel = useCallback(() => {
@@ -83,10 +90,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [focus, activeModal, closePanel]);
-  const resume = resumeHref({
-    resumeFileUrl: portfolio.profile.resumeFileUrl,
-    links: portfolio.items.resume?.links,
-  });
+  const resume = resumeHref({ resumeFileUrl: portfolio.profile.resumeFileUrl });
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
 
@@ -139,6 +143,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
               tagline={portfolio.siteConfig.heroTagline}
               resumeHref={resume}
               resumeLabel={portfolio.siteConfig.ctas.resume}
+              hireMeHref={hireMeHref(portfolio.profile.contact)}
             />
           ) : (
             <RoomPanel id={focus} portfolio={portfolio} onClose={closePanel} onOpenItem={setActiveModal} />

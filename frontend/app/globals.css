@@ -34,6 +34,18 @@
 
 html {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  scrollbar-color: var(--color-line) var(--background);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+::selection {
+  background: rgba(255, 184, 107, 0.3);
+  color: var(--color-text-primary);
 }
 
 body {

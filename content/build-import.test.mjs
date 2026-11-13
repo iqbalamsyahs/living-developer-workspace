@@ -15,6 +15,14 @@ test("document counts", () => {
   assert.equal(ofType("project").length, 6);
 });
 
+test("images use the importer's _sanityAsset shape, not a nested asset", () => {
+  for (const p of ofType("project")) {
+    assert.match(p.coverImage._sanityAsset, /^image@https:\/\//, p.title);
+    assert.equal(p.coverImage.asset, undefined, p.title);
+  }
+  assert.match(ofType("profile")[0].photo._sanityAsset, /^image@https:\/\//);
+});
+
 test("profile is the pinned singleton", () => {
   assert.equal(ofType("profile")[0]._id, "profile");
 });
