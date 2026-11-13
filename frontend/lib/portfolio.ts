@@ -206,13 +206,14 @@ export function toPlainText(blocks: PortableTextBlock[] | undefined): string {
 }
 
 const headings: SiteConfig["headings"] = {
-  about: "About & Experience",
-  stack: "My Stack & My Services",
-  showcase: "Showcase Projects",
+  // Same names as the room nav (ROOM_LABELS) so a section reads the same everywhere.
+  about: "About",
+  stack: "Stack & Services",
+  showcase: "Projects",
   contact: "Contact",
   resume: "Resume",
-  projects: "Selected projects",
-  journal: "Learning journal",
+  projects: "Projects",
+  journal: "Journal",
   experience: "Experience",
 };
 

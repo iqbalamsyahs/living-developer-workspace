@@ -15,7 +15,7 @@ interface AboutModalContentProps {
 const JP_CHARS = /[぀-ヿ㐀-䶿一-鿿]/;
 
 /**
- * About & Experience modal: narrative bio, a one-line philosophy, then the
+ * About modal: narrative bio, a one-line philosophy, then the
  * career timeline. Opened by the open book on the desk.
  */
 export function AboutModalContent({ content, onClose }: AboutModalContentProps) {

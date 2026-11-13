@@ -57,7 +57,7 @@ Instead of standard drop shadows, we use **glows** (colored box-shadows) to repr
 
 ### Core Journey 2: The Recruiter Bailout (Any Device)
 1. User lands on the site.
-2. If on Desktop, they click the persistent "Standard View" button in the top-right HUD.
+2. If on Desktop, they click the persistent "Simple page" button in the top-right HUD.
 3. The 3D canvas is unmounted, revealing the 2D Standard View.
 4. If on Mobile, the viewport media query serves the 2D Standard View directly; the 3D bundle never loads.
 
@@ -67,7 +67,7 @@ Instead of standard drop shadows, we use **glows** (colored box-shadows) to repr
 * **Z-Index 0 (Canvas):** The React Three Fiber scene, `aria-hidden`, fixed and full-viewport.
 * **Z-Index 10 (HUD):** `pointer-events-none` absolute layer; only its controls opt back into pointer events.
     * *Top Left:* Logo / Name mark.
-    * *Top Right:* Availability badge, Resume link, Contact button, Hire me, "Standard View" toggle — shifted left of the panel while it's open.
+    * *Top Right:* Availability badge, Resume link, Contact button, Hire me, "Simple page" toggle (the Standard View) — shifted left of the panel while it's open.
     * *Bottom Center:* Hint text, hidden while the panel is open: `"Drag to rotate · Scroll to zoom · Click an object to open it"`.
     * *Right edge, vertically centered:* One icon button per active room object (hidden below `lg` while the panel is open, so it doesn't collide with the panel).
     * *Bottom Left (only when no panel is open):* The intro card — name, tagline, resume button.

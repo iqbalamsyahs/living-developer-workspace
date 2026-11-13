@@ -67,7 +67,7 @@ export function ShowcaseCard({
 }
 
 /**
- * Showcase Projects modal: a card list of projects; each card opens the
+ * Projects modal: a card list of projects; each card opens the
  * detailed project, which restores this modal on close. Opened by the PC.
  */
 export function ShowcaseModalContent({

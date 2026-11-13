@@ -123,7 +123,7 @@ export function HUD({
             </a>
           )}
           <Button variant="outline" size="sm" onClick={onToggleStandard}>
-            Standard View
+            Simple page
           </Button>
         </div>
       </div>
@@ -151,9 +151,15 @@ export function HUD({
               aria-pressed={openId === item.id}
               data-room={item.id}
               onClick={() => (openId === item.id ? onClose() : onOpen(item.id))}
-              className="flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-sm border border-primary/30 bg-surface/80 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
             >
               <Icon width={18} height={18} aria-hidden="true" />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute right-full mr-2 whitespace-nowrap rounded-sm border border-line bg-surface px-2 py-1 font-display text-xs text-text-primary opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+              >
+                {item.label}
+              </span>
             </button>
           );
         })}

@@ -31,7 +31,7 @@ const DEFAULT_LABELS: Record<StackCategory, string> = {
 };
 
 /**
- * My Stack & My Services modal: the tech stack grouped by category (bento
+ * Stack & Services modal: the tech stack grouped by category (bento
  * feel via pill rows), then services as bordered cards. Opened by the
  * whiteboard on the desk.
  */
