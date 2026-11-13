@@ -143,6 +143,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
               tagline={portfolio.siteConfig.heroTagline}
               resumeHref={resume}
               resumeLabel={portfolio.siteConfig.ctas.resume}
+              hireMeHref={hireMeHref(portfolio.profile.contact)}
             />
           ) : (
             <RoomPanel id={focus} portfolio={portfolio} onClose={closePanel} onOpenItem={setActiveModal} />

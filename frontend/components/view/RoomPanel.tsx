@@ -66,7 +66,7 @@ export function RoomPanel({ id, portfolio, onClose, onOpenItem }: RoomPanelProps
                 >
                   <span className="font-display text-sm text-text-primary">{entry.title}</span>
                   {entry.date && (
-                    <span className="font-mono text-[11px] uppercase tracking-wide text-text-secondary">{entry.date}</span>
+                    <span className="font-mono text-xs uppercase tracking-wide text-text-secondary">{entry.date}</span>
                   )}
                 </button>
               </li>
