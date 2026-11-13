@@ -16,7 +16,7 @@ interface ModalHeaderProps {
  */
 export function ModalHeader({ id, title, subtitle, onClose }: ModalHeaderProps) {
   return (
-    <header className="flex items-start justify-between gap-4 border-b border-primary/10 p-8 pb-6">
+    <header className="flex items-start justify-between gap-4 border-b border-line p-8 pb-6">
       <div className="min-w-0">
         <h2 id={`${id}-title`} className="font-display text-2xl leading-none">
           {title}

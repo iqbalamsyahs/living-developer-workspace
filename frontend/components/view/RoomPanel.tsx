@@ -62,7 +62,7 @@ export function RoomPanel({ id, portfolio, onClose, onOpenItem }: RoomPanelProps
                 <button
                   type="button"
                   onClick={() => onOpenItem(entry.id)}
-                  className="flex w-full flex-col items-start gap-0.5 border-t border-primary/10 py-3 text-left transition-colors hover:text-primary"
+                  className="flex w-full flex-col items-start gap-0.5 border-t border-line py-3 text-left transition-colors hover:text-primary"
                 >
                   <span className="font-display text-sm text-text-primary">{entry.title}</span>
                   {entry.date && (
