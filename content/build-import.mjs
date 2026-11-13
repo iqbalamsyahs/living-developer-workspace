@@ -38,7 +38,7 @@ const docs = [
     _type: "profile",
     name: "Iqbal Alamsyah",
     heroTagline:
-      "Frontend Web Developer at Aegislabs since 2021, building web apps, landing pages and CMS with React, Vue and Laravel.",
+      "Frontend Web Developer at Aegislabs since 2021, building web apps, landing pages, and CMS with React, Vue, and Laravel.",
     bio: bio.map(block),
     philosophy,
     photo: image(photo.url, photo.alt),

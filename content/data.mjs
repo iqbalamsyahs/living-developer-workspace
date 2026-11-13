@@ -39,8 +39,8 @@ export const socials = [
 
 // Owner-approved About copy: one string per paragraph.
 export const bio = [
-  "I'm Iqbal, a frontend web developer from Bandung, Indonesia. Since 2021 I've worked at Aegislabs, building applications with Laravel, React and Vue, including asset and project management systems for PLN.",
-  "Outside the day job I take on freelance work: web apps, landing pages that convert, CMS tools teams can run themselves, and API integrations. I work remotely with clients anywhere, and I care about the details users feel: speed, responsiveness and a clean handoff.",
+  "I'm Iqbal, a frontend web developer from Bandung, Indonesia. Since 2021 I've worked at Aegislabs, building applications with Laravel, React, and Vue, including asset and project management systems for PLN.",
+  "Outside the day job I take on freelance work: web apps, landing pages that convert, CMS tools teams can run themselves, and API integrations. I work remotely with clients anywhere, and I care about the details users feel: speed, responsiveness, and a clean handoff.",
 ];
 
 export const philosophy =
@@ -54,17 +54,17 @@ export const experiences = [
     id: "experience-aegislabs",
     position: "Frontend Web Developer",
     company: "Aegislabs",
-    // The site only says "2021 - Present"; owner to correct the month/day.
-    startDate: "2021-01-01",
+    startDate: "2021-11-22",
     description:
       "Developing several applications as Frontend Web Developer using Framework Laravel for PHP, Library React JS and Framework Vue for Javascript",
   },
   {
-    id: "experience-walden",
+    // Created in Studio; id kept so a re-import updates it instead of duplicating.
+    id: "cb9ec3ea-7187-4584-9aa0-f44d4830f142",
     position: "QA Intern",
     company: "PT Walden Global Service",
     startDate: "2018-11-01",
-    endDate: "2019-02-28",
+    endDate: "2019-01-31",
     description:
       "Tested a B2B application, manually and with automated checks, tracking test cases in Excel templates and sending a daily test report by email.",
   },
