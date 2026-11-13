@@ -90,7 +90,7 @@ export function Modal({
       }}
     >
       <div
-        className={`flex h-full flex-col overflow-hidden bg-surface text-text-primary shadow-modal-glow md:mx-auto md:my-auto md:h-auto md:max-h-[85vh] md:w-[80%] md:rounded-md lg:my-0 lg:ml-auto lg:mr-0 lg:h-full lg:w-[40%] lg:rounded-none ${className}`}
+        className={`flex h-full flex-col overflow-hidden bg-surface text-text-primary shadow-modal-glow md:mx-auto md:my-auto md:h-auto md:max-h-[85vh] md:w-[80%] md:rounded-md lg:my-0 lg:ml-auto lg:mr-0 lg:h-full lg:max-h-none lg:w-[max(40%,min(28rem,50vw))] lg:rounded-none ${className}`}
       >
         {children}
       </div>

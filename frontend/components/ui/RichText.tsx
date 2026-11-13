@@ -15,7 +15,7 @@ const components: PortableTextComponents = {
         {children}
       </blockquote>
     ),
-    normal: ({ children }) => <p className="mb-4 text-text-primary/90">{children}</p>,
+    normal: ({ children }) => <p className="mb-4 max-w-[65ch] text-pretty text-text-primary/90">{children}</p>,
   },
   list: {
     bullet: ({ children }) => <ul className="mt-2 list-disc space-y-1 pl-5 text-text-primary/90">{children}</ul>,

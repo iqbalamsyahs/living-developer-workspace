@@ -140,7 +140,11 @@ export function ProjectDetail({ content }: ProjectDetailProps) {
           <ListSection title="Outcomes" items={content.outcomes} marker="✓" />
         )}
 
-        {content.body.length > 0 && <RichText value={content.body} />}
+        {content.body.length > 0 ? (
+          <RichText value={content.body} className="mt-8" />
+        ) : (
+          content.summary && <p className="max-w-[65ch] text-pretty text-base text-text-primary/90">{content.summary}</p>
+        )}
       </div>
 
       {content.links && content.links.length > 0 && (

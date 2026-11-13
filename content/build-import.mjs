@@ -3,7 +3,8 @@ import { writeFileSync } from "node:fs";
 import { email, experience, faq, photo, projects, services, socials, stack } from "./data.mjs";
 
 const keyed = (prefix, items) => items.map((item, i) => ({ _key: `${prefix}${i}`, ...item }));
-const image = (url, alt) => ({ _type: "image", asset: { _type: "reference", _sanityAsset: `image@${url}` }, alt });
+// `_sanityAsset` sits on the image object itself; the importer uploads the URL and writes `asset._ref`.
+const image = (url, alt) => ({ _type: "image", _sanityAsset: `image@${url}`, alt });
 const block = (text) => ({
   _type: "block",
   _key: "b0",

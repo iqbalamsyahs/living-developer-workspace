@@ -109,7 +109,8 @@ export function HUD({
             </a>
           )}
           {nav.some((n) => n.id === "contact") && (
-            <Button variant="ghost" size="sm" onClick={() => onOpen("contact")}>
+            // With the panel open the bar is narrower; the phone nav button still reaches Contact.
+            <Button variant="ghost" size="sm" onClick={() => onOpen("contact")} className={panelOpen ? "max-xl:hidden" : ""}>
               Contact
             </Button>
           )}
