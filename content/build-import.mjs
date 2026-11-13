@@ -37,7 +37,7 @@ const docs = [
     _type: "profile",
     name: "Iqbal Alamsyah",
     heroTagline:
-      "Experienced web developer from Bandung, Indonesia, with a passion for crafting seamless digital experiences and a proven track record.",
+      "Frontend Web Developer at Aegislabs since 2021, building web apps, landing pages and CMS with React, Vue and Laravel.",
     photo: image(photo.url, photo.alt),
     availability: { isAvailable: true, statusText: "Available for work", timezone: "Asia/Jakarta" },
     experiences: [{ _type: "reference", _key: "e0", _ref: experience.id }],
