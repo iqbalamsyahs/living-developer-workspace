@@ -54,7 +54,7 @@
   - `function clampTarget(t: Vec3): Vec3`
   - `function activeRoomIds(p: PortfolioData): RoomId[]` (`import type { PortfolioData } from "./portfolio"`)
 
-- [ ] **Step 1: Write the failing tests in `lib/room.test.ts`**
+- [x] **Step 1: Write the failing tests in `lib/room.test.ts`**
 
 ```ts
 import { test } from "node:test";
@@ -109,24 +109,24 @@ test("every pose looks from the open side and overview obeys the orbit limits", 
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `node --test lib/room.test.ts`
 Expected: FAIL, cannot find module `./room.ts`.
 
-- [ ] **Step 3: Implement `lib/room.ts`**
+- [x] **Step 3: Implement `lib/room.ts`**
 
 - `fromSketch` converts the spec appendix format `[x, y, z, w, d, h]` (x/y on the floor, z up) to `position: [x + w/2, z + h/2, y + d/2]`, `size: [w, h, d]`. Build `DECOR` and `OBJECTS[*].boxes` by calling it with the spec appendix rows as the starting point; split rows into several boxes where that reads better (desk legs, monitor stand, bed frame + mattress + pillow + blanket `#b5544d`, book spines on both shelves, pot + leaves). Monitor screen, window, and lamp head get `glow: true`.
 - `clampTarget` clamps x to `[1, 5]`, y to `[0.5, 2.5]`, z to `[1, 5]`.
 - Starting values for the builder to tune visually in Task 3: `OVERVIEW = { position: [15, 11, 15], target: [3, 1.2, 3] }`; `ORBIT_LIMITS = { minAzimuth: 0.2, maxAzimuth: Math.PI / 2 - 0.2, minPolar: 0.55, maxPolar: 1.25, minDistance: 7, maxDistance: 24 }`. Each object's `camera.target` is its box center; `camera.position` is the target plus an offset toward +x/+y/+z sized so the object fills roughly the left 60% of the viewport (the panel covers the right side).
 - `activeRoomIds` returns `ROOM_ORDER` filtered by: about = bio non-empty or `philosophy` or `photo?.asset?._ref`; showcase = `projects.length > 0`; stack = `stack` or `services` non-empty; experience = `items.about.experiences` non-empty; journal = `journalEntries.length > 0`; contact = `contact.email` non-empty or `contact.socials` non-empty.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `node --test lib/room.test.ts`
 Expected: 5 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/room.ts lib/room.test.ts
@@ -146,31 +146,31 @@ git commit -m "feat(room): room layout table, camera poses, active-object logic"
 **Interfaces:**
 - Produces: Tailwind tokens keep their names so no component class changes: `background`, `surface`, `primary`, `primary-ink`, `secondary`, `secondary-ink`, `text-primary`, `text-secondary`, and one new token `line` (`border-line`).
 
-- [ ] **Step 1: Replace token values in `globals.css`**
+- [x] **Step 1: Replace token values in `globals.css`**
 
 `--background #0f0d17`, `--foreground #f3ece4`, `surface #1a1626`, `line #2c2540`, `primary #ffb86b`, `primary-ink` a dark brown that passes AA on `#ffb86b`, `secondary` a soft purple around `#b39ddb`, `secondary-ink` dark purple passing AA on it, `text-primary #f3ece4`, `text-secondary #a99fb5`. Rewrite `--shadow-modal-glow` and `dialog::backdrop` rgba values from the new base and accent.
 
-- [ ] **Step 2: Fix stray old colors**
+- [x] **Step 2: Fix stray old colors**
 
 `HomeClient` fallback message uses `border-line bg-surface/90 text-text-primary`. Button comment names the new accent.
 
-- [ ] **Step 3: Verify contrast**
+- [x] **Step 3: Verify contrast**
 
 Run a one-off node script (not committed) computing WCAG contrast for: text-primary and text-secondary on background and surface, primary on surface, primary-ink on primary, secondary-ink on secondary.
 Expected: every ratio ≥ 4.5.
 
-- [ ] **Step 4: Update `DESIGN.md`**
+- [x] **Step 4: Update `DESIGN.md`**
 
 Section 2 mood becomes "warm night bedroom" (dark room, desk lamp, monitor glow, cozy, low-poly). Section 3 color list replaced with the new tokens and their roles. Leave other sections for Task 6.
 
-- [ ] **Step 5: Verify build and old colors gone from tokens**
+- [x] **Step 5: Verify build and old colors gone from tokens**
 
 Run: `pnpm exec tsc --noEmit; pnpm lint`
 Expected: no errors.
 Run: `git grep -nE "#0f172a|#10b981|#1e293b|slate-" -- app components/ui components/view components/HomeClient.tsx`
 Expected: no output.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/globals.css components/ui/Button.tsx components/HomeClient.tsx ../DESIGN.md
@@ -201,7 +201,7 @@ interface DesktopSceneProps {
 }
 ```
 
-- [ ] **Step 1: Rewrite `DesktopScene.tsx`**
+- [x] **Step 1: Rewrite `DesktopScene.tsx`**
 
 - Render `DECOR` and every `OBJECTS[id].boxes` as `<mesh>` with shared `boxGeometry` (one unit box, scaled per mesh) and `meshStandardMaterial` with `flatShading`; `glow` boxes get `emissive` = own color, `toneMapped={false}`.
 - Each object is a `<group>`; only ids in `active` get `onPointerOver/Out/Click`. Hover: set `document.body.style.cursor = "pointer"`, raise that group's emissive intensity slightly, show a drei `<Html>` label (`labels[id]`, `pointer-events-none`, palette classes) above the object. `onClick` calls `e.stopPropagation()` then `onSelect(id)`. Reset cursor on out and on unmount.
@@ -211,22 +211,22 @@ interface DesktopSceneProps {
 - Canvas: `camera={{ position: OVERVIEW.position, fov: 35 }}`, `dpr={[1, 2]}`, `onPointerMissed={onBackgroundClick}`, keep the `webglcontextlost` + `mountedRef` guard. Wrapper `div` stays `aria-hidden fixed inset-0 z-0`; drop the `touch-pan-y` override (no page scroll any more).
 - Drop the `DEBUG` grid/axes helper.
 
-- [ ] **Step 2: Rewire `HomeClient.tsx`**
+- [x] **Step 2: Rewire `HomeClient.tsx`**
 
 Remove `useJourney`, `buildStops`, `stopIndexForContent`, `StopOverlay`, `ProgressDots`, and the `100vh` spacer. Add `const [focus, setFocus] = useState<RoomId | null>(null)`, `const active = useMemo(() => activeRoomIds(portfolio), [portfolio])`, `const reducedMotion = useReducedMotion()`. For this task only, `onSelect` sets `focus` and opens the existing `Modal` with the matching item (`showcase` → `ShowcaseModalContent`, `experience` → `about` item); closing the modal sets `focus` to null. Pass `onContact={() => setActiveModal("contact")}` and `journeyHint={false}` to `HUD` until Task 4 changes its props. `handleSceneFailure` also clears `focus`.
 
-- [ ] **Step 3: Type check and lint**
+- [x] **Step 3: Type check and lint**
 
 Run: `pnpm exec tsc --noEmit; pnpm lint; pnpm test`
 Expected: no errors; all tests pass (old journey/layout tests still run, deleted in Task 6).
 
-- [ ] **Step 4: Visual check**
+- [x] **Step 4: Visual check**
 
 Run `pnpm dev` in the background, then:
 `node scripts/e2e/shoot.mjs ../.shots/t3 overview:shot drag:900,450,200,450 wait:400 left:shot release drag:900,450,1300,250 wait:400 right:shot release wheel:-3000 wait:400 close:shot wheel:6000 wait:400 far:shot`
 Expected, by looking at each PNG: the room reads as a bedroom at night; no shot shows the outside of a wall, under the floor, or empty space past the room; hovering a clickable object (add `click`-free `eval` hover if needed) shows label and pointer. Tune `OVERVIEW`, `ORBIT_LIMITS`, object boxes, and light intensities in `lib/room.ts` until true, then rerun `node --test lib/room.test.ts`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/scene/DesktopScene.tsx components/HomeClient.tsx lib/room.ts
@@ -250,7 +250,7 @@ git commit -m "feat(scene): code-built night bedroom with clamped free orbit"
   - `IntroCard({ name, tagline, resumeHref, resumeLabel }: { name: string; tagline: string; resumeHref?: string; resumeLabel: string })`
   - `HUD` props: drop `zoomed`, `onContact`, `journeyHint`, `navItems`; add `nav: { id: RoomId; label: string }[]` and `panelOpen: boolean`. `onOpen` becomes `(id: RoomId) => void`.
 
-- [ ] **Step 1: `RoomPanel`**
+- [x] **Step 1: `RoomPanel`**
 
 `<aside aria-labelledby={`${id}-title`}>` fixed to the right edge, full height, `w-[min(28rem,50vw)]`, `bg-surface border-l border-line`, `z-10`, flex column, slide-in from right with the existing `modal-in` animation (reduced motion: none). Body by id, reusing existing components:
 - `about` → `AboutModalContent` with `{ ...items.about, title: ROOM_LABELS.about, experiences: undefined }`
@@ -262,15 +262,15 @@ git commit -m "feat(scene): code-built night bedroom with clamped free orbit"
 
 On mount and on `id` change, focus the panel's close button (`aside.querySelector("button")`).
 
-- [ ] **Step 2: `IntroCard`**
+- [x] **Step 2: `IntroCard`**
 
 Port the intro branch of `StopOverlay.tsx:21-40` to a fixed left card (`left-6 top-24`, `max-w-sm`, `bg-surface/85 border-line backdrop-blur`), `h1` name, tagline, resume link with `resumeLabel`.
 
-- [ ] **Step 3: `HUD`**
+- [x] **Step 3: `HUD`**
 
 Remove the Credits link and the journey/zoom props. Contact button → `onOpen("contact")`, rendered only if `contact` is in `nav`. Hint text `"Drag to rotate · Scroll to zoom · Click an object to open it"`, hidden while `panelOpen`. Nav buttons map `nav`; add icons for `experience` (`IdCardIcon`) and `journal` (`ReaderIcon`) from `@radix-ui/react-icons`; set `aria-pressed` on the open one. Hide the nav column while `panelOpen` on screens narrower than `lg` so it does not sit on the panel; at `lg+` shift it left of the panel.
 
-- [ ] **Step 4: Wire `HomeClient`**
+- [x] **Step 4: Wire `HomeClient`**
 
 - `nav = active.map((id) => ({ id, label: ROOM_LABELS[id] }))`.
 - `select(id)` sets `focus`; `closePanel()` sets `focus` null and returns focus to the HUD nav button for that id if it exists. `onBackgroundClick` → `closePanel`.
@@ -279,12 +279,12 @@ Remove the Credits link and the journey/zoom props. Contact button → `onOpen("
 - `IntroCard` renders when `showHUD && focus == null`. Resume link stays in the HUD top bar too.
 - `handleSceneFailure` clears `focus` and `activeModal`.
 
-- [ ] **Step 5: Type check, lint, tests**
+- [x] **Step 5: Type check, lint, tests**
 
 Run: `pnpm exec tsc --noEmit; pnpm lint; pnpm test`
 Expected: clean.
 
-- [ ] **Step 6: Behavior check with the e2e driver** (dev server running)
+- [x] **Step 6: Behavior check with the e2e driver** (dev server running)
 
 Each run saves PNGs; inspect them.
 1. Click each active object (coordinates from the Task 3 overview shot), `wait:1500`, `shot`: camera framed on the object, panel open with the right content, intro card hidden.
@@ -293,7 +293,7 @@ Each run saves PNGs; inspect them.
 4. `--no-webgl`: Standard View renders with no blank page. Then a normal run with `eval:document.querySelector('canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext()` while a panel is open: Standard View plus the status message, no panel.
 5. Keyboard: `key:Tab` until a nav button is focused, `key:Enter`, `eval:document.activeElement.getAttribute('aria-label')` + `log`: the close button is focused. `key:Escape`, `log` again: focus is back on the nav button.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add components/view/RoomPanel.tsx components/view/IntroCard.tsx components/view/HUD.tsx components/HomeClient.tsx
@@ -311,20 +311,20 @@ git commit -m "feat(room): side panel per object, intro card, HUD nav from activ
 **Interfaces:**
 - Produces: `RoomIcon({ id, className }: { id: RoomId; className?: string })` returning a small inline low-poly SVG (`aria-hidden`, `viewBox="0 0 48 48"`, flat fills in the scene's colors from `lib/room.ts` or the palette).
 
-- [ ] **Step 1: `RoomIcons.tsx`**
+- [x] **Step 1: `RoomIcons.tsx`**
 
 One SVG per `RoomId`: bed (about), monitor (showcase), PC tower (stack), poster (experience), book stack (journal), phone (contact). Simple rects and polygons only.
 
-- [ ] **Step 2: Use them in `StandardView`**
+- [x] **Step 2: Use them in `StandardView`**
 
 Put the matching `RoomIcon` (size `h-10 w-10`) beside each section `h2`: about → bed, stack and services → PC, projects → monitor, journal → books, contact → phone; the experience subheading inside about gets the poster. Remove the `/credits` footer link. Guard the hero "View project" button: render it only if `projects[0]` exists (today it calls `onOpen(undefined)`). Swap any `border-primary/10` dividers to `border-line`. Update the component doc comment (no "future 3D desk").
 
-- [ ] **Step 3: Check**
+- [x] **Step 3: Check**
 
 Run: `pnpm exec tsc --noEmit; pnpm lint`
 Then `node scripts/e2e/shoot.mjs ../.shots/t5 --w 390 --h 844 mobile:shot` and `--w 1440 --h 900` with a click on "Standard View": both show the new palette and icons, no navy or green.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/view/RoomIcons.tsx components/view/StandardView.tsx
@@ -343,33 +343,33 @@ git commit -m "feat(standard-view): room object icons and night palette"
 - Modify: `PRD.md`, `DESIGN.md`, `AGENTS.md:35`
 - Keep: `frontend/scripts/e2e/shoot.mjs` unchanged (generic driver, used by Tasks 3 to 5).
 
-- [ ] **Step 1: Confirm nothing imports what is about to go**
+- [x] **Step 1: Confirm nothing imports what is about to go**
 
 Run: `git grep -nE "journey|SceneModel|scene/layout|overlayRoot|ShowcaseGrid|credits|\.glb|\.gltf|AboutScreen|ContactScreen|ShowcaseScreen|StackScreen" -- app components hooks lib`
 Expected: only hits inside the files being deleted.
 
-- [ ] **Step 2: Delete the files listed above**
+- [x] **Step 2: Delete the files listed above**
 
-- [ ] **Step 3: Drop dependencies**
+- [x] **Step 3: Drop dependencies**
 
 Run: `pnpm why sharp` and check `next.config.ts` uses no image optimizer (the app uses plain `<img>` via `SanityImage`). Then:
 `pnpm remove @gltf-transform/core @gltf-transform/extensions @gltf-transform/functions meshoptimizer sharp`
 If `pnpm why` shows a runtime need, keep `sharp` and say so in the commit message.
 
-- [ ] **Step 4: Docs**
+- [x] **Step 4: Docs**
 
 - `AGENTS.md:35`: replace the orthographic line with "Perspective camera (small fov) over a code-built bedroom; see PRD 6.1." Also the GLB rule on line 34: all 3D is built from primitives in code, no model files.
 - `PRD.md` 6.1: free orbit within clamps (azimuth on the open side, polar above the floor, clamped zoom and pan), click an object to fly the camera to it and open the right-hand panel, hover shows glow + pointer + label, objects with empty content are inert. 6.2: panel replaces per-object modals; project and journal details still use the modal. Remove scroll-stop wording and the `.gltf` loading screen mention.
 - `DESIGN.md`: screen inventory, user flows, and per-screen layout describe the bedroom, the panel, the intro card, and Standard View icons. Remove "terminal green" and `.gltf` wording.
 
-- [ ] **Step 5: Full verification**
+- [x] **Step 5: Full verification**
 
 Run: `pnpm test; pnpm exec tsc --noEmit; pnpm lint; pnpm build`
 Expected: all pass, build has no `/credits` route.
 Run: `git grep -nE "#0f172a|#10b981|#1e293b|slate-|emerald-" -- app components lib`
 Expected: no output.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A . ../PRD.md ../DESIGN.md ../AGENTS.md
