@@ -1,22 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { HUD } from "@/components/view/HUD";
+import { RoomPanel } from "@/components/view/RoomPanel";
+import { IntroCard } from "@/components/view/IntroCard";
 import { StandardView } from "@/components/view/StandardView";
 import { SplashScreen } from "@/components/view/SplashScreen";
 import { Modal } from "@/components/ui/Modal";
 import { ModalContent } from "@/components/modal/ModalContent";
 import { ProjectModalContent } from "@/components/modal/ProjectModalContent";
-import { AboutModalContent } from "@/components/modal/AboutModalContent";
-import { StackModalContent } from "@/components/modal/StackModalContent";
-import { ContactModalContent } from "@/components/modal/ContactModalContent";
-import { DesktopScene } from "@/components/scene/DesktopScene";
-import type { ContentItem, PortfolioData } from "@/lib/portfolio";
+import dynamic from "next/dynamic";
+import { SceneBoundary } from "@/components/scene/SceneBoundary";
+import { hireMeHref, resumeHref, type ContentItem, type PortfolioData } from "@/lib/portfolio";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useWebGL } from "@/hooks/useWebGL";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { activeRoomIds, ROOM_LABELS, type RoomId } from "@/lib/room";
 
-// z-scale: 3D canvas -1 | HUD overlay 10 | modal dialog top-layer.
+// ssr:false + dynamic keeps three.js out of the mobile bundle and the server render.
+const DesktopScene = dynamic(
+  () => import("@/components/scene/DesktopScene").then((m) => m.DesktopScene),
+  { ssr: false },
+);
 
-const SPIKE_STAGES: (string | null)[] = [null, "about", "pc", "contact"];
+// z-scale: 3D canvas 0 | HUD overlay + room panel 10 | modal dialog top-layer.
 
 interface HomeClientProps {
   portfolio: PortfolioData;
@@ -27,12 +34,10 @@ export function HomeClient({ portfolio }: HomeClientProps) {
   // Auto view: HUD on desktop, Standard View on mobile. The override locks
   // the user's choice after a manual toggle; resizing never auto-flips back.
   const [standardOverride, setStandardOverride] = useState(false);
+  const [sceneFailed, setSceneFailed] = useState(false);
+  // null until probed on the client; the 3D bundle only loads once WebGL is known to work.
+  const webgl = useWebGL();
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  // "pc" while the showcase is shown on the monitor (3D zoom); null when the
-  // showcase is closed and the camera returns to the desk. The PC model and the
-  // HUD showcase button both set this instead of opening a dialog.
-  const [zoomTarget, setZoomTarget] = useState<string | null>(null);
-
   // Boot splash. SSR media query defaults to the mobile StandardView, so the
   // first paint is always Standard; without a cover, desktop users see a
   // Standard->HUD flash. Keep the splash opaque through hydration + the
@@ -45,90 +50,52 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     return () => clearTimeout(t);
   }, []);
 
+  const showHUD = isDesktop && !standardOverride && webgl === true;
+  const [focus, setFocus] = useState<RoomId | null>(null);
+  // Leaving the HUD (resize, toggle) drops the open panel so it can't resurface later.
+  if (!showHUD && focus != null) setFocus(null);
+  const active = useMemo(() => activeRoomIds(portfolio), [portfolio]);
+  const nav = useMemo(() => active.map((id) => ({ id, label: ROOM_LABELS[id] })), [active]);
+  const reducedMotion = useReducedMotion();
+
   const toggleView = () => {
     setStandardOverride((overridden) => !overridden);
-    // Standard View unmounts the 3D scene; drop any zoom/modal so no state
-    // dangles when the user toggles back to HUD.
-    setZoomTarget(null);
     setActiveModal(null);
+    setFocus(null);
+  };
+  const handleSceneFailure = () => {
+    setSceneFailed(true);
+    setStandardOverride(true);
+    setActiveModal(null);
+    setFocus(null);
   };
   const closeModal = () => setActiveModal(null);
-  // The showcase lives on the PC monitor (3D zoom) in HUD mode; anywhere else
-  // it falls back to a normal dialog.
-  const openContent = (id: string) => {
-    // In HUD mode, the showcase lives on the PC monitor and the contact screen
-    // on the phone (both 3D zooms); anywhere else they fall back to a dialog.
-    const zt =
-      id === "showcase" ? "pc" : id === "contact" ? "contact" : id === "about" ? "about" : null;
-    if (zt && showHUD) {
-      // Toggle: zoomed in on the object -> click again zooms back out (like Esc).
-      if (zoomTarget === zt) closeShowcase();
-      else setZoomTarget(zt);
-    } else setActiveModal(id);
-  };
-  const closeShowcase = () => {
-    setActiveModal(null);
-    setZoomTarget(null);
-  };
-
-  // Esc closes the on-monitor showcase (zoom-out) while no dialog is open.
-  // The native <dialog> handles its own Escape, so skip when one is up.
+  const closePanel = useCallback(() => {
+    setFocus(null);
+    // Next frame: below lg the nav is hidden until the panel is gone.
+    if (focus) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-room="${focus}"]`)?.focus());
+  }, [focus]);
   useEffect(() => {
-    if (!zoomTarget) return;
+    if (focus == null || activeModal != null) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (activeModal && activeModal !== "showcase") return;
-      closeShowcase();
+      if (e.key === "Escape") closePanel();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [zoomTarget, activeModal]);
-
-  const showHUD = isDesktop && !standardOverride;
-
-  // SPIKE (throwaway): scroll position -> camera stage, reusing zoomTarget.
-  // Stack/experience/journal stages have no zoom view yet.
-  useEffect(() => {
-    if (!showHUD) return;
-    let last = 0;
-    const onScroll = () => {
-      const i = Math.min(
-        SPIKE_STAGES.length - 1,
-        Math.round(window.scrollY / window.innerHeight),
-      );
-      if (i === last) return;
-      last = i;
-      setZoomTarget(SPIKE_STAGES[i]);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [showHUD]);
+  }, [focus, activeModal, closePanel]);
+  const resume = resumeHref({
+    resumeFileUrl: portfolio.profile.resumeFileUrl,
+    links: portfolio.items.resume?.links,
+  });
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
-  // True while the showcase is rendered on the monitor; suppresses the dialog
-  // (showcase is never a dialog in HUD mode).
-  const showcaseOnScreen = activeModal === "showcase" && zoomTarget != null;
 
-  const renderModalContent = (content: ContentItem, onClose: () => void) => {
-    switch (content.kind) {
-      case "about":
-        return <AboutModalContent content={content} onClose={onClose} />;
-      case "stack":
-        return (
-          <StackModalContent
-            content={content}
-            categoryLabels={portfolio.siteConfig.categoryLabels}
-            onClose={onClose}
-          />
-        );
-      case "contact":
-        return <ContactModalContent content={content} onClose={onClose} />;
-      case "project":
-        return <ProjectModalContent content={content} onClose={onClose} />;
-      default:
-        return <ModalContent content={content} onClose={onClose} />;
-    }
-  };
+  const renderModalContent = (content: ContentItem, onClose: () => void) =>
+    content.kind === "project" ? (
+      <ProjectModalContent content={content} onClose={onClose} />
+    ) : (
+      <ModalContent content={content} onClose={onClose} />
+    );
 
   return (
     <>
@@ -143,37 +110,59 @@ export function HomeClient({ portfolio }: HomeClientProps) {
 
       {showHUD ? (
         <>
-          <div
-            aria-hidden
-            className="pointer-events-none"
-            style={{ height: `${SPIKE_STAGES.length * 100}vh` }}
-          />
+          <SceneBoundary onError={handleSceneFailure}>
           <DesktopScene
-            onOpenModal={openContent}
-            zoomTarget={zoomTarget}
-            projects={portfolio.projects}
-            showcaseContent={portfolio.items.showcase}
-            contactContent={portfolio.items.contact}
-            aboutContent={portfolio.items.about}
-            onCloseShowcase={closeShowcase}
+            active={active}
+            labels={ROOM_LABELS}
+            focus={focus}
+            onSelect={setFocus}
+            onBackgroundClick={closePanel}
+            onContextLost={handleSceneFailure}
+            reducedMotion={reducedMotion}
           />
+          </SceneBoundary>
           <HUD
             brand={portfolio.siteConfig.brand}
-            navItems={portfolio.siteConfig.navItems}
+            nav={nav}
+            panelOpen={focus != null}
+            openId={focus}
             onToggleStandard={toggleView}
-            onOpen={openContent}
-            zoomed={zoomTarget != null}
+            onOpen={setFocus}
+            onClose={closePanel}
+            hireMeHref={hireMeHref(portfolio.profile.contact)}
+            resumeHref={resume}
+            availability={portfolio.profile.availability}
           />
+          {focus == null ? (
+            <IntroCard
+              name={portfolio.profile.name}
+              tagline={portfolio.siteConfig.heroTagline}
+              resumeHref={resume}
+              resumeLabel={portfolio.siteConfig.ctas.resume}
+            />
+          ) : (
+            <RoomPanel id={focus} portfolio={portfolio} onClose={closePanel} onOpenItem={setActiveModal} />
+          )}
         </>
       ) : (
         <StandardView
           portfolio={portfolio}
           onToggleHUD={isDesktop ? toggleView : undefined}
-          onOpen={openContent}
+          onOpen={setActiveModal}
+          resumeHref={resume}
         />
       )}
 
-      {activeContent && !showcaseOnScreen && (
+      {sceneFailed && !showHUD && (
+        <p
+          role="status"
+          className="fixed bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-md border border-line bg-surface/90 px-4 py-2 text-sm text-text-primary"
+        >
+          The 3D scene could not load, so you are seeing the standard view.
+        </p>
+      )}
+
+      {activeContent && (
         <Modal
           open
           onClose={closeModal}

@@ -9,7 +9,7 @@ export type ContentKind =
   | "showcase"
   | "contact";
 
-export type StackCategory = "framework" | "language" | "tool" | "cloud";
+export type StackCategory = "framework" | "language" | "tool" | "cloud" | "database";
 
 export interface Experience {
   position: string;
@@ -39,8 +39,15 @@ export interface SocialItem {
 
 export interface Contact {
   email: string;
+  /** Optional scheduling link (e.g. a booking page); only https URLs are used. */
+  bookingUrl?: string;
   blurb?: string;
   socials?: SocialItem[];
+}
+
+/** True when an image field actually has an asset (an editor can save alt text alone). */
+export function hasImageAsset(img: RawImage | undefined | null): boolean {
+  return !!img?.asset?._ref;
 }
 
 /** Raw Sanity shape of an image reference (before urlFor). */
@@ -48,6 +55,17 @@ export interface RawImage {
   _type: "image";
   asset: { _ref: string };
   alt?: string;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface Availability {
+  isAvailable: boolean;
+  statusText?: string;
+  timezone?: string;
 }
 
 export interface ContentItem {
@@ -71,6 +89,8 @@ export interface ContentItem {
   summary?: string;
   body: PortableTextBlock[];
   links?: { label: string; href: string }[];
+  /** about only: profile photo. */
+  photo?: RawImage;
   /** about only: one-line working philosophy. */
   philosophy?: string;
   /** about only: career history. */
@@ -89,7 +109,14 @@ export interface PortfolioData {
   items: Record<string, ContentItem>;
   projects: ContentItem[];
   journalEntries: ContentItem[];
-  profile: { name: string; contact?: Contact };
+  profile: {
+    name: string;
+    contact?: Contact;
+    photo?: RawImage;
+    availability?: Availability;
+    faq?: FaqItem[];
+    resumeFileUrl?: string;
+  };
   siteConfig: SiteConfig;
 }
 
@@ -105,7 +132,6 @@ export interface SiteConfig {
   >;
   ctas: Record<"caseStudy" | "resume" | "readCaseStudy" | "email", string>;
   categoryLabels: Record<StackCategory, string>;
-  navItems: { id: string; label: string }[];
 }
 
 /** Raw Sanity shape returned by PORTFOLIO_QUERY. */
@@ -113,12 +139,17 @@ export interface PortfolioPayload {
   profile?: {
     _id: string;
     name?: string;
+    heroTagline?: string;
     philosophy?: string;
     bio?: PortableTextBlock[];
     experiences?: Experience[];
     stack?: StackItem[];
     services?: Service[];
     contact?: Contact;
+    photo?: RawImage;
+    availability?: Availability;
+    faq?: FaqItem[];
+    resumeFileUrl?: string;
     resume?: { headline?: PortableTextBlock[]; links?: { label: string; href: string }[] };
     siteConfig?: Partial<SiteConfig>;
   };
@@ -149,6 +180,24 @@ interface RawJournalEntry {
   summary?: string;
   body?: PortableTextBlock[];
   slug?: string;
+}
+
+const isHttps = (url?: string): url is string => !!url && url.toLowerCase().startsWith("https://");
+
+/** "Hire me" target: a booking page if set (https only), else mailto, else nothing. */
+export function hireMeHref(contact?: Contact): string | undefined {
+  if (isHttps(contact?.bookingUrl)) return contact.bookingUrl;
+  return contact?.email ? `mailto:${contact.email}` : undefined;
+}
+
+/** Resume target: the uploaded file if present, else the first configured link. */
+export function resumeHref(p: { resumeFileUrl?: string; links?: { label: string; href: string }[] }): string | undefined {
+  return p.resumeFileUrl || p.links?.[0]?.href || undefined;
+}
+
+/** Heading for a stack category; unknown categories read as tools. */
+export function categoryLabel(labels: SiteConfig["categoryLabels"], category: string): string {
+  return labels[category as StackCategory] ?? labels.tool;
 }
 
 /** Portable Text → plain text, for previews and JP detection. */
@@ -187,15 +236,8 @@ export const defaultSiteConfig: SiteConfig = {
     language: "Languages",
     tool: "Tools",
     cloud: "Cloud & Infra",
+    database: "Databases",
   },
-  navItems: [
-    { id: "showcase", label: "Showcase" },
-    { id: "about", label: "About" },
-    { id: "stack", label: "Stack" },
-    { id: "contact", label: "Contact" },
-    { id: "jrn-japanese", label: "Learning journal" },
-    { id: "resume", label: "Resume" },
-  ],
 };
 
 /** Deep-merge only the top-level keys the editor actually set; drop empties. */
@@ -215,7 +257,9 @@ function mergeDeep<T>(base: T, override?: Partial<T>): T {
 }
 
 export function buildSiteConfig(raw: PortfolioPayload["profile"]): SiteConfig {
-  return mergeDeep(defaultSiteConfig, raw?.siteConfig);
+  // Precedence: siteConfig override > top-level profile.heroTagline > built-in default.
+  const base = raw?.heroTagline ? { ...defaultSiteConfig, heroTagline: raw.heroTagline } : defaultSiteConfig;
+  return mergeDeep(base, raw?.siteConfig);
 }
 
 export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
@@ -256,6 +300,7 @@ export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
     body: profile?.bio ?? [],
     philosophy: profile?.philosophy,
     experiences: profile?.experiences,
+    photo: profile?.photo,
   };
   const stack: ContentItem = {
     id: "stack",
@@ -300,7 +345,14 @@ export function buildPortfolio(payload: PortfolioPayload): PortfolioData {
     items,
     projects,
     journalEntries,
-    profile: { name: profile?.name ?? fallbackName, contact },
+    profile: {
+      name: profile?.name ?? fallbackName,
+      contact,
+      photo: profile?.photo,
+      availability: profile?.availability,
+      faq: profile?.faq,
+      resumeFileUrl: profile?.resumeFileUrl,
+    },
     siteConfig,
   };
 }

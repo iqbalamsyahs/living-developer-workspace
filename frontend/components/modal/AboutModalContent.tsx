@@ -4,6 +4,7 @@ import type { ContentItem } from "@/lib/portfolio";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
 import { RichText } from "@/components/ui/RichText";
+import { SanityImage } from "@/components/ui/SanityImage";
 import { toPlainText } from "@/lib/portfolio";
 
 interface AboutModalContentProps {
@@ -29,6 +30,16 @@ export function AboutModalContent({ content, onClose }: AboutModalContentProps) 
           hasJapanese ? "font-jp" : ""
         }`}
       >
+        {content.photo && (
+          <SanityImage
+            image={content.photo}
+            width={320}
+            alt={content.photo.alt}
+            aspect="1/1"
+            className="mb-6 h-32 w-32 rounded-md border border-primary/10"
+          />
+        )}
+
         {content.body.length > 0 && <RichText value={content.body} />}
 
         {content.philosophy && (

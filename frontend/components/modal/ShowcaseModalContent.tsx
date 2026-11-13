@@ -16,7 +16,7 @@ interface ShowcaseModalContentProps {
   onClose: () => void;
 }
 
-/** One project card. Shared by the modal list and the on-monitor slider. */
+/** One project card in the showcase list. */
 export function ShowcaseCard({
   project,
   onOpen,

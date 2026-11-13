@@ -1,0 +1,26 @@
+interface IntroCardProps {
+  name: string;
+  tagline: string;
+  resumeHref?: string;
+  resumeLabel: string;
+}
+
+/** Overview greeting: who this is and the resume, without touching the 3D. */
+export function IntroCard({ name, tagline, resumeHref, resumeLabel }: IntroCardProps) {
+  return (
+    <div className="fixed bottom-16 left-6 z-10 max-w-xs rounded-md border border-line bg-surface/85 p-6 backdrop-blur">
+      <h1 className="font-display text-3xl leading-tight text-text-primary">{name}</h1>
+      {tagline && <p className="mt-3 text-sm leading-relaxed text-text-secondary">{tagline}</p>}
+      {resumeHref && (
+        <a
+          href={resumeHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-flex rounded-sm border border-primary/40 px-3 py-1.5 text-sm text-primary transition-colors hover:bg-primary/10"
+        >
+          {resumeLabel}
+        </a>
+      )}
+    </div>
+  );
+}

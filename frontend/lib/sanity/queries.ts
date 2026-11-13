@@ -8,7 +8,8 @@ export const PORTFOLIO_TAG = "portfolio-content";
 // not fetched (the 3D scene stays code-driven) and not in the webhook filter.
 export const PORTFOLIO_QUERY = `{
   "profile": *[_type == "profile"][0]{
-    _id, name, philosophy, bio, contact, resume, siteConfig,
+    photo, availability, faq, "resumeFileUrl": resume.file.asset->url,
+    _id, name, heroTagline, philosophy, bio, contact, resume, siteConfig,
     "experiences": experiences[]->{position, company, startDate, endDate, description},
     stack, services
   },

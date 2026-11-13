@@ -6,13 +6,16 @@ import { TechPill } from "@/components/ui/TechPill";
 import { ExperienceTimeline } from "@/components/ExperienceTimeline";
 import { RichText, toPlainText } from "@/components/ui/RichText";
 import { SanityImage } from "@/components/ui/SanityImage";
-import type { PortfolioData } from "@/lib/portfolio";
+import { RoomIcon } from "@/components/view/RoomIcons";
+import { categoryLabel, hasImageAsset, type PortfolioData } from "@/lib/portfolio";
 import type { PortableTextBlock } from "@portabletext/react";
 
 interface StandardViewProps {
   portfolio: PortfolioData;
   /** Present on desktop when the 3D HUD is the alternative view. */
   onToggleHUD?: () => void;
+  /** Resume file or first link; the button is hidden without it. */
+  resumeHref?: string;
   onOpen: (id: string) => void;
 }
 
@@ -38,10 +41,10 @@ function journalPreview(body: PortableTextBlock[]): string {
 
 /**
  * Mobile-first 2D layout: the default view on small screens and the opt-in
- * "Standard View" on desktop. Cards here are the 2D fallback for the future
- * 3D desk interactions.
+ * "Standard View" on desktop, with small room-object icons beside each
+ * section heading echoing the 3D bedroom scene.
  */
-export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewProps) {
+export function StandardView({ portfolio, onToggleHUD, onOpen, resumeHref }: StandardViewProps) {
   const { siteConfig, projects, journalEntries } = portfolio;
   const about = portfolio.items.about;
   const stackContent = portfolio.items.stack;
@@ -66,34 +69,55 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
           {siteConfig.heroTagline}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button
-            onClick={() => onOpen(projects[0]?.id)}
-            className="group"
-          >
-            {siteConfig.ctas.caseStudy}
-            <ArrowRightIcon
-              width={16}
-              height={16}
-              aria-hidden="true"
-              className="transition-transform group-hover:translate-x-0.5"
-            />
-          </Button>
-          <Button variant="outline" onClick={() => onOpen("resume")}>
-            {siteConfig.ctas.resume}
-          </Button>
+          {projects[0] && (
+            <Button
+              onClick={() => onOpen(projects[0].id)}
+              className="group"
+            >
+              {siteConfig.ctas.caseStudy}
+              <ArrowRightIcon
+                width={16}
+                height={16}
+                aria-hidden="true"
+                className="transition-transform group-hover:translate-x-0.5"
+              />
+            </Button>
+          )}
+          {resumeHref && (
+            <a
+              href={resumeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-sm border border-primary/60 px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-ink"
+            >
+              {siteConfig.ctas.resume}
+            </a>
+          )}
         </div>
       </header>
 
       {/* About & Experience */}
       {about && (
         <section aria-labelledby="about-heading" className="py-16">
-          <h2
-            id="about-heading"
-            className="font-display text-2xl text-text-primary"
-          >
-            {siteConfig.headings.about}
-          </h2>
+          <div className="flex items-center gap-3">
+            <RoomIcon id="about" className="h-10 w-10" />
+            <h2
+              id="about-heading"
+              className="font-display text-2xl text-text-primary"
+            >
+              {siteConfig.headings.about}
+            </h2>
+          </div>
           <div className="mt-8 flex flex-col gap-4">
+            {hasImageAsset(about.photo) && about.photo && (
+              <SanityImage
+                image={about.photo}
+                width={320}
+                alt={about.photo.alt}
+                aspect="1/1"
+                className="h-32 w-32 rounded-md border border-line"
+              />
+            )}
             {about.body.length > 0 && (
               <RichText value={about.body} />
             )}
@@ -104,10 +128,13 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
             )}
           </div>
           {about.experiences && about.experiences.length > 0 && (
-            <div className="mt-10 rounded-md border border-primary/10 bg-surface p-8">
-              <h3 className="mb-8 font-display text-lg text-text-primary">
-                {siteConfig.headings.experience}
-              </h3>
+            <div className="mt-10 rounded-md border border-line bg-surface p-8">
+              <div className="mb-8 flex items-center gap-3">
+                <RoomIcon id="experience" className="h-10 w-10" />
+                <h3 className="font-display text-lg text-text-primary">
+                  {siteConfig.headings.experience}
+                </h3>
+              </div>
               <ExperienceTimeline experiences={about.experiences} />
             </div>
           )}
@@ -117,18 +144,21 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
       {/* Stack & Services */}
       {stackContent && stackContent.stack && stackContent.stack.length > 0 && (
         <section aria-labelledby="stack-heading" className="py-16">
-          <h2
-            id="stack-heading"
-            className="font-display text-2xl text-text-primary"
-          >
-            {siteConfig.headings.stack}
-          </h2>
+          <div className="flex items-center gap-3">
+            <RoomIcon id="stack" className="h-10 w-10" />
+            <h2
+              id="stack-heading"
+              className="font-display text-2xl text-text-primary"
+            >
+              {siteConfig.headings.stack}
+            </h2>
+          </div>
           <div className="mt-8 flex flex-col gap-8">
             {[...new Set(stackContent.stack.map((item) => item.category))].map(
               (category) => (
                 <div key={category}>
                   <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-text-secondary">
-                    {siteConfig.categoryLabels[category]}
+                    {categoryLabel(siteConfig.categoryLabels, category)}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {stackContent
@@ -145,12 +175,24 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
               ),
             )}
           </div>
+        </section>
+      )}
+
+      {/* Services */}
+      {stackContent?.services && stackContent.services.length > 0 && (
+        <section aria-labelledby="services-heading" className="py-16">
+          <div className="flex items-center gap-3">
+            <RoomIcon id="stack" className="h-10 w-10" />
+            <h2 id="services-heading" className="font-display text-2xl text-text-primary">
+              Services
+            </h2>
+          </div>
           {stackContent.services && stackContent.services.length > 0 && (
-            <div className="mt-10 grid gap-4 md:grid-cols-2">
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
               {stackContent.services.map((service) => (
                 <article
                   key={service.name}
-                  className="rounded-md border border-primary/10 bg-surface p-6"
+                  className="rounded-md border border-line bg-surface p-6"
                 >
                   <h3 className="font-display text-sm text-text-primary">
                     {service.name}
@@ -167,20 +209,23 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
 
       {/* Projects */}
       <section aria-labelledby="projects-heading" className="py-16">
-        <h2
-          id="projects-heading"
-          className="font-display text-2xl text-text-primary"
-        >
-          {siteConfig.headings.projects}
-        </h2>
+        <div className="flex items-center gap-3">
+          <RoomIcon id="showcase" className="h-10 w-10" />
+          <h2
+            id="projects-heading"
+            className="font-display text-2xl text-text-primary"
+          >
+            {siteConfig.headings.projects}
+          </h2>
+        </div>
         <div className="mt-8 flex flex-col gap-6">
           {projects.map((project) => (
             <article
               key={project.id}
-              className="rounded-md border border-primary/10 bg-surface p-6 transition-colors hover:border-primary/40"
+              className="rounded-md border border-line bg-surface p-6 transition-colors hover:border-primary/40"
             >
               {project.coverImage && (
-                <div className="mb-4 overflow-hidden rounded-sm border border-primary/10">
+                <div className="mb-4 overflow-hidden rounded-sm border border-line">
                   <SanityImage
                     image={project.coverImage}
                     width={800}
@@ -217,12 +262,15 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
 
       {/* Journal / learning */}
       <section aria-labelledby="journal-heading" className="py-16">
-        <h2
-          id="journal-heading"
-          className="font-display text-2xl text-text-primary"
-        >
-          {siteConfig.headings.journal}
-        </h2>
+        <div className="flex items-center gap-3">
+          <RoomIcon id="journal" className="h-10 w-10" />
+          <h2
+            id="journal-heading"
+            className="font-display text-2xl text-text-primary"
+          >
+            {siteConfig.headings.journal}
+          </h2>
+        </div>
         <div className="mt-8 flex flex-col gap-6 md:grid md:grid-cols-2">
           {journalEntries.map((entry) => {
             const preview = journalPreview(entry.body);
@@ -251,15 +299,42 @@ export function StandardView({ portfolio, onToggleHUD, onOpen }: StandardViewPro
         </div>
       </section>
 
+      {/* FAQ */}
+      {portfolio.profile.faq && portfolio.profile.faq.length > 0 && (
+        <section aria-labelledby="faq-heading" className="py-16">
+          <h2 id="faq-heading" className="font-display text-2xl text-text-primary">
+            FAQ
+          </h2>
+          <div className="mt-8 flex flex-col gap-3">
+            {portfolio.profile.faq.filter((item) => item.question && item.answer).map((item) => (
+              <details
+                key={item.question}
+                className="group rounded-md border border-line bg-surface p-5 open:border-primary/40"
+              >
+                <summary className="cursor-pointer font-display text-sm text-text-primary">
+                  {item.question}
+                </summary>
+                <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
+                  {item.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Contact */}
       <section aria-labelledby="contact-heading" className="py-16">
-        <div className="rounded-md border border-primary/10 bg-surface p-8">
-          <h2
-            id="contact-heading"
-            className="font-display text-2xl text-text-primary"
-          >
-            {siteConfig.headings.contact}
-          </h2>
+        <div className="rounded-md border border-line bg-surface p-8">
+          <div className="flex items-center gap-3">
+            <RoomIcon id="contact" className="h-10 w-10" />
+            <h2
+              id="contact-heading"
+              className="font-display text-2xl text-text-primary"
+            >
+              {siteConfig.headings.contact}
+            </h2>
+          </div>
           {contact.body.length > 0 && (
             <div className="mt-3 max-w-[55ch]">
               <RichText value={contact.body} />

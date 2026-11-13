@@ -26,20 +26,20 @@ Traditional developer portfolios rely on static lists and grids that tell visito
 ## 4. User Stories
 *   **As a Recruiter**, I want a clear "Skip to Resume/Standard View" button on desktop, so that I can bypass the 3D experience if I am in a hurry.
 *   **As an Engineering Manager**, I want to click the virtual monitor to browse project screenshots and open a project detail modal (gallery, role, highlights, outcomes, body), so that I can evaluate past frontend projects.
-*   **As an Engineering Manager**, I want to click a specific notebook on the desk to see ongoing personal growth (e.g., language learning progress, vocabulary lists), so that I can gauge the developer's continuous learning mindset.
+*   **As an Engineering Manager**, I want to click the bookshelf to see ongoing personal growth (e.g., language learning progress, vocabulary lists), so that I can gauge the developer's continuous learning mindset.
 *   **As a Mobile User**, I want to see a clean, optimized 2D layout immediately upon loading, so that I don't drain my battery or experience lag.
-*   **As the Site Administrator**, I want to add a new predefined 3D object to the desk and populate it with content via Sanity, so that it appears on the live site automatically via ISR without a manual redeploy.
+*   **As the Site Administrator**, I want each room object to light up and become clickable automatically once I fill in its mapped Sanity content, so that it appears on the live site via ISR without a manual redeploy.
 
 ## 5. Feature List
 
 | Feature | Scope | Description |
 | :--- | :--- | :--- |
-| **3D Isometric Scene** | MVP | React Three Fiber scene with interactive click-targets (Monitor, Whiteboard, Notebook). |
-| **Mobile Fallback UI** | MVP | Completely separate 2D component tree rendered conditionally for mobile viewports. |
-| **Sanity Object Mapping** | MVP | Ability to add/remove predefined objects to the desk via CMS (e.g., toggle an extra plant or a second monitor). |
-| **Content Modals** | MVP | HTML/CSS overlays triggered by clicking 3D objects to display Sanity content. |
+| **Code-Built Night Bedroom** | MVP | React Three Fiber scene, built from primitive boxes (no model files), with six clickable room objects. |
+| **Mobile Fallback UI** | MVP | Completely separate 2D component tree rendered conditionally for mobile viewports, reusing the room's icons and palette. |
+| **Sanity-Driven Activation** | MVP | Each room object is clickable only when its mapped Sanity content is non-empty; empty objects stay inert and drop out of nav. |
+| **Right-Hand Content Panel** | MVP | A single panel component, reused across all six objects, slides in from the right when an object is clicked. |
 | **ISR Webhooks** | MVP | Sanity triggers Vercel/Next.js to regenerate static pages on content update. |
-| **Arbitrary 3D Uploads** | v2 | Upload custom `.gltf` models directly in Sanity Studio to render on the desk. |
+| **Arbitrary 3D Uploads** | v2 | Upload custom `.gltf` models directly in Sanity Studio to render in the room. |
 | **Dynamic Positioning** | v2 | Drag-and-drop X, Y, Z coordinate mapping from within Sanity Studio. |
 | **Day/Night Cycle** | Later | Lighting in the 3D scene matches the visitor's local timezone. |
 
@@ -47,13 +47,16 @@ Traditional developer portfolios rely on static lists and grids that tell visito
 
 **6.1. The 3D Scene (Desktop)**
 *   Must use React Three Fiber (`@react-three/fiber`) and Drei (`@react-three/drei`).
-*   Camera must be locked in an orthographic projection to force the isometric perspective.
-*   Hover states must be obvious (e.g., cursor changes to pointer, object scales up 1.05x, or emits an outline).
-*   Must include a global UI overlay (HTML outside the canvas) with a clear "View Standard Layout / Resume" toggle.
+*   A single code-built night bedroom (primitive boxes, no model files): floor and two back walls, desk under the window, bed, bookshelf, wall shelf, rug, plant.
+*   Camera is a perspective camera (small fov) with free orbit within clamps: azimuth clamped to the room's open side, polar angle clamped above the floor and below the ceiling, zoom and pan clamped to stay inside the room.
+*   Clicking an object flies the camera to a pose framing that object and opens the right-hand panel (6.2). Clicking empty space or the close control flies back to the overview pose.
+*   Hovering a clickable object shows a glow, a pointer cursor, and a small label with the object's content name. Objects whose mapped Sanity content is empty are inert: no hover, no glow, not clickable, not in nav.
+*   Must include a global UI overlay (HTML outside the canvas) with a clear "Standard View" toggle and HUD nav buttons mirroring the clickable objects.
 
-**6.2. The Content Modals**
-*   When a 3D object is clicked, the camera zooms slightly to the object, and an HTML/CSS modal overlays the canvas.
-*   Modals must be fully accessible (Focus trapping, `Escape` key to close, ARIA labels).
+**6.2. The Content Panel**
+*   When a room object is clicked, the camera flies to it and a single right-hand panel (reused across all six objects) opens with that object's content, replacing the old per-object modal overlay.
+*   Project and journal entries are listed in the panel; clicking one opens the existing project/journal detail in a modal on top of the panel.
+*   The panel and any modal above it are fully accessible (focus moves into the panel/modal, `Escape` closes the modal first and the panel on a second press, ARIA labels).
 
 **6.3. Mobile Fallback (The 2D UI)**
 *   Rely on CSS media queries or user-agent detection at the middleware level to block the load of the 3D canvas entirely on mobile to save bandwidth.
@@ -65,26 +68,35 @@ Traditional developer portfolios rely on static lists and grids that tell visito
 
 ## 7. Data Model Sketch (Sanity Schema)
 
+Each room object maps to a fixed content slice; the object is clickable only once its slice is non-empty (`frontend/lib/room.ts#activeRoomIds`).
+
+| Room Object | Content | Source |
+| :--- | :--- | :--- |
+| Bed | About me | `items.about` (body, philosophy, photo) |
+| Monitor | Projects | `portfolio.projects`, `items.showcase` |
+| PC | Tech stack & services | `items.stack` |
+| Poster | Work experience | `items.about.experiences` |
+| Bookshelf | Journal | `portfolio.journalEntries` |
+| Phone | Contact | `items.contact` |
+
 | Document / Object | Fields | Type | Description |
 | :--- | :--- | :--- | :--- |
-| `workspaceConfig` | `activeObjects` | Array of references | The single-ton document controlling what is currently on the desk. |
-| `deskObject` | `internalName` | String | e.g., "Main Monitor", "Japanese Notebook". |
-| | `modelType` | String (Dropdown) | Must map exactly to a frontend component (e.g., `monitor`, `whiteboard`, `notebook`). |
-| | `contentReference` | Reference | Links to a Project, Resume, or Journal document. |
 | `project` | `title`, `coverImage`, `gallery`, `role`, `highlights`, `outcomes`, `techStack`, `links`, `body` | String, Image, Array, PortableText | Standard portfolio project data; coverImage/gallery are screenshots shown on the showcase and in the project detail. |
 | `journalEntry` | `title`, `date`, `body` | String, Date, PortableText | For ongoing learning (e.g., language milestones, framework exploration). |
+
+The earlier `workspaceConfig`/`deskObject` schema (CMS-configurable object list) is not used by the frontend; the room's six objects and their mapping are fixed in code.
 
 ## 8. Edge Cases and Failure States
 
 *   **WebGL Not Supported / Disabled:** If the user's browser lacks WebGL support, the site must automatically failover to the Mobile/2D UI regardless of screen size.
 *   **Sanity API Outage:** Because we are using ISR, an API outage simply means the site serves the last successfully generated static version. No downtime for the user.
-*   **Heavy 3D Model Loading:** The canvas must display a stylized CSS loading state (not just a blank screen) while the `.gltf` files are downloading and parsing.
+*   **Scene Boot:** The canvas must display a stylized CSS splash screen (not just a blank screen) while the 3D bundle loads and hydrates; a WebGL context loss after boot falls back to the Standard/2D UI.
 
 ## 9. Success Metrics
 1.  **Performance:** Lighthouse score of 90+ on both Mobile (2D) and Desktop (3D initial load).
-2.  **Engagement:** Average Time on Page > 45 seconds (indicating visitors are interacting with the desk).
+2.  **Engagement:** Average Time on Page > 45 seconds (indicating visitors are interacting with the room).
 3.  **Conversion:** Click-through rate on "Resume" or "Contact" links > 10%.
 
 ## 10. Resolved Technical Decisions
-1.  **Coordinate System:** The layout of the `deskObject` items will be **hardcoded in the frontend**. Positions will be strictly mapped based on the `modelType` (e.g., the monitor is fixed in the center, the notebook is fixed on the right) to ensure no visual overlap and to simplify the MVP scope.
-2.  **Asset Hosting:** The 3D `.gltf` and `.obj` files will be **stored in the Next.js `/public` folder**. This leverages Vercel's Edge Network caching for heavy assets and simplifies deployment, as only the lightweight content data (text, image URLs) needs to be fetched from the Sanity API.
+1.  **Coordinate System:** Every box's position, size, and color is **hardcoded in the frontend** (`frontend/lib/room.ts`), in a design-spec sketch coordinate (x/y on the floor, z up) converted to three.js (y up) by `fromSketch`. No CMS-driven layout.
+2.  **Asset Hosting:** No 3D model files. All geometry is built from primitive boxes in code; only content (text, image URLs) is fetched from the Sanity API.
