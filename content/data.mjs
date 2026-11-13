@@ -48,15 +48,27 @@ export const philosophy =
 
 export const photo ={ url: IMG("1yCelgDI6rlFZFD7urP97WH5mHo.jpg"), alt: "Portrait of Iqbal Alamsyah" };
 
-export const experience = {
-  id: "experience-aegislabs",
-  position: "Frontend Web Developer",
-  company: "Aegislabs",
-  // The site only says "2021 - Present"; owner to correct the month/day.
-  startDate: "2021-01-01",
-  description:
-    "Developing several applications as Frontend Web Developer using Framework Laravel for PHP, Library React JS and Framework Vue for Javascript",
-};
+// Newest first; the profile references them in this order.
+export const experiences = [
+  {
+    id: "experience-aegislabs",
+    position: "Frontend Web Developer",
+    company: "Aegislabs",
+    // The site only says "2021 - Present"; owner to correct the month/day.
+    startDate: "2021-01-01",
+    description:
+      "Developing several applications as Frontend Web Developer using Framework Laravel for PHP, Library React JS and Framework Vue for Javascript",
+  },
+  {
+    id: "experience-walden",
+    position: "QA Intern",
+    company: "PT Walden Global Service",
+    startDate: "2018-11-01",
+    endDate: "2019-02-28",
+    description:
+      "Tested a B2B application, manually and with automated checks, tracking test cases in Excel templates and sending a daily test report by email.",
+  },
+];
 
 export const projects = [
   { slug: "cmms", title: "CMMS", summary: "Asset management system for PLN to track and optimize infrastructure.", cover: "khDIuRGz8gSYGcXkUA2bq0S0E.png" },

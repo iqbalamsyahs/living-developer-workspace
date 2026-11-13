@@ -11,7 +11,7 @@ const PUBLIC_URLS = ["https://vyneapple.com/", "https://apps.vyneapple.com/", "h
 
 test("document counts", () => {
   assert.equal(ofType("profile").length, 1);
-  assert.equal(ofType("experience").length, 1);
+  assert.equal(ofType("experience").length, 2);
   assert.equal(ofType("project").length, 6);
 });
 
@@ -66,7 +66,9 @@ test("dates are ISO yyyy-mm-dd", () => {
   for (const e of ofType("experience")) assert.match(e.startDate, /^\d{4}-\d{2}-\d{2}$/);
 });
 
-test("profile references the experience document", () => {
-  const exp = ofType("experience")[0];
-  assert.deepEqual(ofType("profile")[0].experiences.map((r) => r._ref), [exp._id]);
+test("profile references every experience, newest first", () => {
+  const refs = ofType("profile")[0].experiences.map((r) => r._ref);
+  assert.deepEqual(refs, ofType("experience").map((e) => e._id));
+  const starts = ofType("experience").map((e) => e.startDate);
+  assert.deepEqual(starts, [...starts].sort().reverse());
 });

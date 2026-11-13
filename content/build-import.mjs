@@ -1,6 +1,6 @@
 // Usage: node content/build-import.mjs  ->  content/content.ndjson
 import { writeFileSync } from "node:fs";
-import { bio, email, experience, faq, philosophy, photo, projects, services, socials, stack } from "./data.mjs";
+import { bio, email, experiences, faq, philosophy, photo, projects, services, socials, stack } from "./data.mjs";
 
 const keyed = (prefix, items) => items.map((item, i) => ({ _key: `${prefix}${i}`, ...item }));
 // `_sanityAsset` sits on the image object itself; the importer uploads the URL and writes `asset._ref`.
@@ -15,14 +15,15 @@ const block = (text, i = 0) => ({
 
 // Order matters for the importer: referenced documents come before the profile.
 const docs = [
-  {
-    _id: experience.id,
+  ...experiences.map((e) => ({
+    _id: e.id,
     _type: "experience",
-    position: experience.position,
-    company: experience.company,
-    startDate: experience.startDate,
-    description: [block(experience.description)],
-  },
+    position: e.position,
+    company: e.company,
+    startDate: e.startDate,
+    ...(e.endDate ? { endDate: e.endDate } : {}),
+    description: [block(e.description)],
+  })),
   ...projects.map((p) => ({
     _id: `project-${p.slug}`,
     _type: "project",
@@ -42,7 +43,7 @@ const docs = [
     philosophy,
     photo: image(photo.url, photo.alt),
     availability: { isAvailable: true, statusText: "Available for work", timezone: "Asia/Jakarta" },
-    experiences: [{ _type: "reference", _key: "e0", _ref: experience.id }],
+    experiences: experiences.map((e, i) => ({ _type: "reference", _key: `e${i}`, _ref: e.id })),
     stack: keyed("st", stack),
     services: keyed("sv", services),
     faq: keyed("fq", faq),
