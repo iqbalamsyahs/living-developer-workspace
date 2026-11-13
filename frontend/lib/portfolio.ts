@@ -190,9 +190,9 @@ export function hireMeHref(contact?: Contact): string | undefined {
   return contact?.email ? `mailto:${contact.email}` : undefined;
 }
 
-/** Resume target: the uploaded file if present, else the first configured link. */
-export function resumeHref(p: { resumeFileUrl?: string; links?: { label: string; href: string }[] }): string | undefined {
-  return p.resumeFileUrl || p.links?.[0]?.href || undefined;
+/** Resume target: the uploaded file only. A generic profile link (e.g. GitHub) is not a resume. */
+export function resumeHref(p: { resumeFileUrl?: string }): string | undefined {
+  return p.resumeFileUrl || undefined;
 }
 
 /** Heading for a stack category; unknown categories read as tools. */

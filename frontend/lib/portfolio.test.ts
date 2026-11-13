@@ -22,6 +22,7 @@ test("hireMeHref is undefined with no contact route", () => {
 test("resumeHref returns the uploaded file URL when present", () => {
   assert.equal(resumeHref({}), undefined);
   assert.equal(resumeHref({ resumeFileUrl: "https://cdn.sanity.io/cv.pdf" }), "https://cdn.sanity.io/cv.pdf");
+  assert.equal(resumeHref({ resumeFileUrl: "" }), undefined);
 });
 
 test("categoryLabel knows database and falls back to tool", () => {

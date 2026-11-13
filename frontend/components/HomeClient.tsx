@@ -83,10 +83,7 @@ export function HomeClient({ portfolio }: HomeClientProps) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [focus, activeModal, closePanel]);
-  const resume = resumeHref({
-    resumeFileUrl: portfolio.profile.resumeFileUrl,
-    links: portfolio.items.resume?.links,
-  });
+  const resume = resumeHref({ resumeFileUrl: portfolio.profile.resumeFileUrl });
 
   const activeContent = activeModal ? portfolio.items[activeModal] : undefined;
 
