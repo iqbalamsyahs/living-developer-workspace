@@ -6,9 +6,9 @@
 3. **Familiarity Breeds Intuition:** Interaction models should mirror tools your audience (engineering managers, developers) already uses. Modals should feel like IDE panels; typography should echo code editors.
 
 ## 2. Visual Direction
-* **Mood:** "Warm Night Bedroom." Think of a cozy bedroom desk setup at night. Dark room, a desk lamp's warm pool of light, monitor glow, cozy and lived-in, low-poly. It should feel calm and personal, not clinical.
+* **Mood:** "Warm Night Bedroom." Think of a cozy bedroom desk setup at night. Dark room, a desk lamp's warm pool of light, monitor glow, cozy and lived-in, semi-realistic. It should feel calm and personal, not clinical.
 * **References:** High-end dark mode interfaces (like Linear or Vercel's dashboard), minimalist isometric pixel art, and VS Code syntax highlighting themes.
-* **What to Avoid:** Corporate SaaS aesthetics (flat blue and white), overly playful or bouncy UI (no cartoonish physics), and cluttered "maximalist" designs. The 3D objects should be low-poly or stylized, not hyper-realistic, to avoid the "uncanny valley" and keep render times low.
+* **What to Avoid:** Corporate SaaS aesthetics (flat blue and white), overly playful or bouncy UI (no cartoonish physics), and cluttered "maximalist" designs. The 3D objects are semi-realistic: simple code-built primitives (boxes, cylinders, spheres) given real-feeling materials (wood grain, fabric, plastic, brushed metal, glass) and enough small detail to read instantly (keyboard keys, PC vents, curtains). Not photorealistic: no model files or image textures (procedural only), to avoid the "uncanny valley" and keep render times low.
 
 ## 3. Design Tokens
 The design system leans into a dark-mode-first approach, using an 8pt grid system that maps perfectly to Tailwind CSS utility classes.
